@@ -44,3 +44,19 @@ next-env.d.ts
 *.mjs
 docs/
 imports/
+
+# local dev / tooling
+.opencode/
+.sinag-run.pids
+run-with-tunnel.sh
+logs/
+
+# test artifacts
+test_screenshots/
+*_TEST_REPORT.md
+TESTING*.md
+
+# planning docs
+DASHBOARD_UPDATE_PLAN.md
+lib/dummy-data-model.md
+lib/dummy-data-plan.md
