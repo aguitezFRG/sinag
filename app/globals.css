@@ -205,35 +205,6 @@
   --shadow-feature: 0 4px 24px -4px rgb(30 58 95 / 0.15);
 }
 
-/* Dark mode via prefers-color-scheme */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --background-gradient-start: #0f172a;
-    --background-gradient-end: #1e293b;
-    --foreground: #f1f5f9;
-    --surface: #0f172a;
-    --surface-elevated: #1e293b;
-    --surface-muted: #1e293b;
-    --surface-inverted: #f8fafc;
-    --foreground-inverted: #0f172a;
-
-    --border: #1e293b;
-    --border-strong: #334155;
-    --ring: #4787c7;
-    --ring-offset: #020617;
-
-    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-    --shadow-card: 0 4px 20px -2px rgb(0 0 0 / 0.4);
-    --shadow-card-hover: 0 8px 30px -4px rgb(0 0 0 / 0.5);
-    --shadow-feature: 0 4px 24px -4px rgb(0 0 0 / 0.4);
-  }
-}
-
 /* ============================================================
    Tailwind v4 @theme inline
    ============================================================ */
@@ -437,13 +408,6 @@ html {
   color: var(--primary-900);
 }
 
-@media (prefers-color-scheme: dark) {
-  ::selection {
-    background-color: var(--primary-700);
-    color: var(--primary-50);
-  }
-}
-
 /* ============================================================
    Utility Classes
    ============================================================ */
@@ -549,28 +513,6 @@ input::placeholder,
 textarea::placeholder {
   color: var(--input-placeholder) !important;
   opacity: 1;
-}
-
-/* Dark mode overrides - ensure inputs remain visible */
-@media (prefers-color-scheme: dark) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="search"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="number"],
-  textarea,
-  select {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
-    border-color: #334155 !important;
-  }
-  
-  input::placeholder,
-  textarea::placeholder {
-    color: #94a3b8 !important;
-  }
 }
 
 /* Additional specificity for Tailwind-styled inputs */
