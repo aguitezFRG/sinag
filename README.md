@@ -70,8 +70,3 @@ sinag/
 | `adviser` | Student management, document reviews, AI chat |
 | `coordinator` | Workflow oversight, analytics |
 | `admin` | User management, audit logs, system settings |
-
-## Docs
-
-- `docs/DESIGN.md` — DB schema, API spec, component architecture, AI pipeline
-- `docs/SRS.md` — Software requirements specification
