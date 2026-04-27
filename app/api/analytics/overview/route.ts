@@ -1,35 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { users, workflows, aiQueries, documents, dummyStudents, dummyAdvisers } from '@/lib/dummy-data';
+import { withAuth } from '@/lib/middleware';
+import { getAdminStats, getCoordinatorStats } from '@/lib/dummy-data';
 
-export async function GET(_req: NextRequest) {
-  const totalUsers = users.length;
-  const totalStudents = users.filter((u) => u.role === 'student').length;
-  const totalAdvisers = users.filter((u) => u.role === 'adviser').length;
-  const totalQueries = aiQueries.length;
-  const totalDocuments = documents.length;
-  const totalWorkflows = workflows.length;
-  const activeWorkflows = workflows.filter((w) => w.status === 'active').length;
-  const completedWorkflows = workflows.filter((w) => w.status === 'completed').length;
-  const onHoldWorkflows = workflows.filter((w) => w.status === 'on_hold').length;
+export async function GET(req: NextRequest) {
+  return withAuth(req, async (_req, _auth) => {
+    const adminStats = getAdminStats();
+    const coordinatorStats = getCoordinatorStats();
 
-  const completedMilestones = workflows.reduce(
-    (acc, w) => acc + w.stages.filter((s: any) => s.status === 'approved').length,
-    0
-  );
-  const totalMilestones = workflows.reduce((acc, w) => acc + w.stages.length, 0);
-
-  return NextResponse.json({
-    totalUsers,
-    totalStudents,
-    totalAdvisers,
-    totalQueries,
-    totalDocuments,
-    totalWorkflows,
-    activeWorkflows,
-    completedWorkflows,
-    onHoldWorkflows,
-    completedMilestones,
-    totalMilestones,
-    milestoneCompletionRate: totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0,
-  });
+    return NextResponse.json({
+      totalUsers: adminStats.totalUsers,
+      totalStudents: adminStats.totalStudents,
+      totalAdvisers: adminStats.totalAdvisers,
+      totalQueries: adminStats.totalQueries,
+      totalDocuments: adminStats.totalDocuments,
+      totalWorkflows: adminStats.totalWorkflows,
+      activeWorkflows: adminStats.activeWorkflows,
+      completedWorkflows: adminStats.completedWorkflows,
+      onHoldWorkflows: adminStats.onHoldWorkflows,
+      completedMilestones: adminStats.completedMilestones,
+      totalMilestones: adminStats.totalMilestones,
+      milestoneCompletionRate: adminStats.milestoneCompletionRate,
+      unassignedStudents: coordinatorStats.unassignedStudents,
+      adviserWorkload: coordinatorStats.adviserWorkload,
+      programBreakdown: coordinatorStats.programBreakdown,
+    });
+  }, ['coordinator', 'admin']);
 }
