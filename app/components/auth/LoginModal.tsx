@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/hooks/useAuth';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
+import Image from 'next/image';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, X } from 'lucide-react';
 
 interface LoginModalProps {
@@ -85,11 +86,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
         {/* SESAM Logo */}
         <div className="text-center mb-6">
-          <div className="w-20 h-20 bg-[#0C0B5D] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-          </div>
+          <Image
+            src="/images/favicon.png"
+            alt="SINAG logo"
+            width={72}
+            height={72}
+            className="rounded-2xl mx-auto mb-4 shadow-lg"
+          />
           <h1 className="text-2xl font-bold text-gray-900">Welcome to SINAG</h1>
           <p className="text-sm text-gray-600 mt-1">AI-Powered Graduate Advising Platform</p>
         </div>
