@@ -1,26 +1,598 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Project SINAG — Design System Tokens (Figma-Aligned)
+   Next.js 16 + Tailwind CSS v4 + React 19
+   ============================================================ */
+
 :root {
+  /* ==========================================================
+     Primary — Deep Navy #0C0B5D (from Figma Design System)
+     ========================================================== */
+  --primary: #0C0B5D;
+  --primary-50: #f0f0f9;
+  --primary-100: #e1e1f3;
+  --primary-200: #c3c3e7;
+  --primary-300: #a5a5db;
+  --primary-400: #8787cf;
+  --primary-500: #0C0B5D;
+  --primary-600: #0a0a4a;
+  --primary-700: #08083e;
+  --primary-800: #060632;
+  --primary-900: #040426;
+  --primary-950: #02021a;
+
+  /* ==========================================================
+     Accent Colors (from Figma cards)
+     ========================================================== */
+  --accent-purple: #8b5cf6;
+  --accent-purple-light: #f3f0ff;
+  --accent-green: #10b981;
+  --accent-green-light: #ecfdf5;
+  --accent-orange: #f97316;
+  --accent-orange-light: #fff7ed;
+  --accent-amber: #f59e0b;
+  --accent-amber-light: #fffbeb;
+  --accent-blue: #3b82f6;
+  --accent-blue-light: #eff6ff;
+  --accent-red: #ef4444;
+  --accent-red-light: #fef2f2;
+  --accent-pink: #ec4899;
+  --accent-pink-light: #fdf2f8;
+  --accent-teal: #14b8a6;
+  --accent-teal-light: #f0fdfa;
+
+  /* ==========================================================
+     Success / Warning / Danger (Semantic) - Figma Design System
+     ========================================================== */
+  --success: #16A34A;
+  --success-50: #f0fdf4;
+  --success-100: #dcfce7;
+  --success-500: #22c55e;
+  --success-600: #16A34A;
+  --success-700: #15803d;
+  --success-foreground: #ffffff;
+
+  --warning: #f59e0b;
+  --warning-50: #fffbeb;
+  --warning-100: #fef3c7;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+  --warning-700: #b45309;
+
+  --danger: #DC2626;
+  --destructive: #DC2626;
+  --danger-50: #fef2f2;
+  --danger-100: #fee2e2;
+  --danger-500: #ef4444;
+  --danger-600: #DC2626;
+  --danger-700: #b91c1c;
+  --destructive-foreground: #ffffff;
+
+  /* ==========================================================
+     Neutral Grays (Refined for better contrast)
+     ========================================================== */
+  --gray-0: #ffffff;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  --gray-950: #020617;
+
+  /* ==========================================================
+     Semantic Surface Tokens (Figma Design System)
+     ========================================================== */
   --background: #ffffff;
-  --foreground: #171717;
+  --background-gradient-start: #f8fafc;
+  --background-gradient-end: #e2e8f0;
+  --foreground: #030213;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f3f3f5;
+  --surface-inverted: #0f172a;
+  --foreground-inverted: #f8fafc;
+
+  /* Sidebar (from Figma) */
+  --sidebar: #0C0B5D;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #0C0B5D;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: rgba(255, 255, 255, 0.3);
+
+  /* Muted/Secondary */
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+
+  /* Card */
+  --card: #ffffff;
+  --card-foreground: #030213;
+
+  /* Border */
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --ring: rgba(12, 11, 93, 0.3);
+  --ring-offset: #ffffff;
+
+  /* Borders & Rings */
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --ring: #1e3a5f;
+  --ring-offset: #ffffff;
+
+  /* Input specific - ensure text is always visible */
+  --input-bg: #ffffff;
+  --input-text: #0f172a;
+  --input-placeholder: #64748b;
+
+  /* Typography */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* Spacing */
+  --space-0: 0px;
+  --space-px: 1px;
+  --space-0\.5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1\.5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-2\.5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-3\.5: 0.875rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-9: 2.25rem;
+  --space-10: 2.5rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Radius */
+  --radius-none: 0px;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
+
+  /* Shadows (Enhanced for depth) */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+  /* Card Shadows (from Figma) */
+  --shadow-card: 0 4px 20px -2px rgb(0 0 0 / 0.08);
+  --shadow-card-hover: 0 8px 30px -4px rgb(0 0 0 / 0.12);
+  --shadow-feature: 0 4px 24px -4px rgb(30 58 95 / 0.15);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/* Dark mode via prefers-color-scheme */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617;
+    --background-gradient-start: #0f172a;
+    --background-gradient-end: #1e293b;
+    --foreground: #f1f5f9;
+    --surface: #0f172a;
+    --surface-elevated: #1e293b;
+    --surface-muted: #1e293b;
+    --surface-inverted: #f8fafc;
+    --foreground-inverted: #0f172a;
+
+    --border: #1e293b;
+    --border-strong: #334155;
+    --ring: #4787c7;
+    --ring-offset: #020617;
+
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    --shadow-card: 0 4px 20px -2px rgb(0 0 0 / 0.4);
+    --shadow-card-hover: 0 8px 30px -4px rgb(0 0 0 / 0.5);
+    --shadow-feature: 0 4px 24px -4px rgb(0 0 0 / 0.4);
   }
 }
 
+/* ============================================================
+   Tailwind v4 @theme inline
+   ============================================================ */
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-background-gradient-start: var(--background-gradient-start);
+  --color-background-gradient-end: var(--background-gradient-end);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-inverted: var(--surface-inverted);
+  --color-foreground-inverted: var(--foreground-inverted);
+
+  /* Primary (Navy #0C0B5D) */
+  --color-primary: var(--primary);
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Muted */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Card */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  /* Accent Colors */
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-purple-light: var(--accent-purple-light);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-light: var(--accent-green-light);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-orange-light: var(--accent-orange-light);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-amber-light: var(--accent-amber-light);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-blue-light: var(--accent-accent-blue-light);
+  --color-accent-red: var(--accent-red);
+  --color-accent-red-light: var(--accent-red-light);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-pink-light: var(--accent-pink-light);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-teal-light: var(--accent-teal-light);
+
+  /* Semantic */
+  --color-success: var(--success);
+  --color-success-50: var(--success-50);
+  --color-success-100: var(--success-100);
+  --color-success-500: var(--success-500);
+  --color-success-600: var(--success-600);
+  --color-success-700: var(--success-700);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-50: var(--warning-50);
+  --color-warning-100: var(--warning-100);
+  --color-warning-500: var(--warning-500);
+  --color-warning-600: var(--warning-600);
+  --color-warning-700: var(--warning-700);
+
+  --color-danger: var(--danger);
+  --color-destructive: var(--destructive);
+  --color-danger-50: var(--danger-50);
+  --color-danger-100: var(--danger-100);
+  --color-danger-500: var(--danger-500);
+  --color-danger-600: var(--danger-600);
+  --color-danger-700: var(--danger-700);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Grays */
+  --color-gray-0: var(--gray-0);
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+  --color-gray-950: var(--gray-950);
+
+  /* Border & Ring */
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+
+  /* Typography */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
+  --text-4xl: var(--text-4xl);
+  --text-5xl: var(--text-5xl);
+  --text-6xl: var(--text-6xl);
+
+  --leading-none: var(--leading-none);
+  --leading-tight: var(--leading-tight);
+  --leading-snug: var(--leading-snug);
+  --leading-normal: var(--leading-normal);
+  --leading-relaxed: var(--leading-relaxed);
+  --leading-loose: var(--leading-loose);
+
+  /* Spacing */
+  --spacing-px: var(--space-px);
+  --spacing-0\.5: var(--space-0\.5);
+  --spacing-1\.5: var(--space-1\.5);
+  --spacing-2\.5: var(--space-2\.5);
+  --spacing-3\.5: var(--space-3\.5);
+
+  /* Radius */
+  --radius-none: var(--radius-none);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-3xl: var(--radius-3xl);
+  --radius-full: var(--radius-full);
+
+  /* Shadows */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+  --shadow-inner: var(--shadow-inner);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-feature: var(--shadow-feature);
+}
+
+/* ============================================================
+   Global base styles
+   ============================================================ */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus ring utility */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--primary-200);
+  color: var(--primary-900);
+}
+
+@media (prefers-color-scheme: dark) {
+  ::selection {
+    background-color: var(--primary-700);
+    color: var(--primary-50);
+  }
+}
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+
+/* Gradient backgrounds */
+.bg-gradient-hero {
+  background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-500) 100%);
+}
+
+.bg-gradient-overlay {
+  background: linear-gradient(180deg, rgba(30, 58, 95, 0.85) 0%, rgba(30, 58, 95, 0.95) 100%);
+}
+
+.bg-gradient-page {
+  background: linear-gradient(180deg, var(--background-gradient-start) 0%, var(--background-gradient-end) 100%);
+}
+
+/* Glass morphism effect for cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Pill badge style */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+/* Stat display */
+.stat-display {
+  text-align: center;
+}
+
+.stat-display .stat-number {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  color: var(--gray-0);
+  line-height: 1;
+}
+
+.stat-display .stat-label {
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+/* Feature icon backgrounds */
+.icon-bg-purple { background-color: var(--accent-purple-light); color: var(--accent-purple); }
+.icon-bg-green { background-color: var(--accent-green-light); color: var(--accent-green); }
+.icon-bg-orange { background-color: var(--accent-orange-light); color: var(--accent-orange); }
+.icon-bg-amber { background-color: var(--accent-amber-light); color: var(--accent-amber); }
+.icon-bg-blue { background-color: var(--accent-blue-light); color: var(--accent-blue); }
+.icon-bg-red { background-color: var(--accent-red-light); color: var(--accent-red); }
+.icon-bg-pink { background-color: var(--accent-pink-light); color: var(--accent-pink); }
+.icon-bg-teal { background-color: var(--accent-teal-light); color: var(--accent-teal); }
+
+/* Program card colors */
+.program-card-ms { border-left: 4px solid var(--accent-blue); }
+.program-card-phd { border-left: 4px solid var(--accent-purple); }
+.program-card-diplomacy { border-left: 4px solid var(--accent-green); }
+.program-card-tmem { border-left: 4px solid var(--accent-teal); }
+
+/* ============================================================
+   Input Field Visibility Fixes
+   Ensures input text is always visible in both light and dark modes
+   ============================================================ */
+
+/* Base input styles to ensure visibility */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+textarea,
+select {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+}
+
+/* Placeholder styling */
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder) !important;
+  opacity: 1;
+}
+
+/* Dark mode overrides - ensure inputs remain visible */
+@media (prefers-color-scheme: dark) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  textarea,
+  select {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+}
+
+/* Additional specificity for Tailwind-styled inputs */
+input[class*="border-gray"],
+input[class*="border-gray-300"],
+input[class*="rounded"],
+textarea[class*="border-gray"],
+select[class*="border-gray"] {
+  color: var(--input-text) !important;
+}
+
+/* Ensure inputs in modals/cards have proper contrast */
+.bg-white input,
+[class*="bg-white"] input {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+/* Focus states */
+input:focus,
+textarea:focus,
+select:focus {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
 }

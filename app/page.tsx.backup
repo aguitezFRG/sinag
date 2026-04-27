@@ -1,0 +1,796 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useAuth } from './hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import LoadingSpinner from './components/LoadingSpinner';
+import {
+  SparklesIcon,
+  LightningIcon,
+  UsersIcon,
+  DocumentIcon,
+  CheckIcon,
+  ChatIcon,
+  ShieldIcon,
+  ChartIcon,
+  GraduationCapIcon,
+  BuildingIcon,
+  GlobeIcon,
+  LeafIcon,
+  ChevronRightIcon,
+} from './components/Icons';
+
+export default function HomePage() {
+  const { user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      router.push(`/${user.role}`);
+    }
+  }, [loading, isAuthenticated, user, router]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-page">
+        <LoadingSpinner size={48} />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-page">
+        <LoadingSpinner size={48} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="absolute left-0 right-0 top-0 z-50">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-12">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+              <SparklesIcon className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-white">SINAG</span>
+          </Link>
+
+          <div className="hidden items-center gap-8 md:flex">
+            <Link href="#" className="text-sm font-medium text-white/80 hover:text-white">
+              Home
+            </Link>
+            <Link href="#about" className="text-sm font-medium text-white/80 hover:text-white">
+              About
+            </Link>
+            <Link href="#features" className="text-sm font-medium text-white/80 hover:text-white">
+              Features
+            </Link>
+            <Link href="#programs" className="text-sm font-medium text-white/80 hover:text-white">
+              Programs
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
+            >
+              Login
+            </button>
+            <Link
+              href="/register"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-[#1e3a5f] hover:bg-white/90"
+            >
+              Sign Up
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen overflow-hidden bg-[#1e3a5f]">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=80')`,
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/95 via-[#1e3a5f]/85 to-[#1e3a5f]/75" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 pt-20 md:px-12">
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-8">
+            {/* Left: Hero Text */}
+            <div className="flex flex-col justify-center">
+              <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                <LeafIcon className="h-4 w-4" />
+                SESAM Intelligent Natural-language Advising Guide
+              </div>
+
+              <h1 className="text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
+                SINAG
+              </h1>
+
+              <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/80">
+                Your AI-powered companion for graduate advising. Streamline your academic journey
+                with intelligent milestone tracking, document management, and personalized AI
+                consultation powered by cutting-edge technology.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[#1e3a5f] hover:bg-white/90"
+                >
+                  <SparklesIcon className="h-4 w-4" />
+                  Get Started Free
+                </Link>
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-3 text-sm font-medium text-white hover:bg-white/10"
+                >
+                  Learn More
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Stats */}
+              <div className="mt-12 grid grid-cols-3 gap-6">
+                <div className="stat-display">
+                  <div className="stat-number">500+</div>
+                  <div className="stat-label">Graduate Students</div>
+                </div>
+                <div className="stat-display">
+                  <div className="stat-number">50+</div>
+                  <div className="stat-label">Faculty Advisers</div>
+                </div>
+                <div className="stat-display">
+                  <div className="stat-number">4</div>
+                  <div className="stat-label">Degree Programs</div>
+                </div>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90">
+                  <ShieldIcon className="h-3.5 w-3.5" />
+                  Secure & Private
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90">
+                  <SparklesIcon className="h-3.5 w-3.5" />
+                  AI-Powered
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90">
+                  <BuildingIcon className="h-3.5 w-3.5" />
+                  UPLB Official
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Floating Feature Cards */}
+            <div className="relative hidden lg:block">
+              <div className="absolute right-0 top-1/2 w-80 -translate-y-1/2 space-y-4">
+                {/* Card 1: AI Consultation */}
+                <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-blue-light/20">
+                      <ChatIcon className="h-5 w-5 text-accent-blue" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">AI-Powered Consultation</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/70">
+                        Get instant answers to your academic questions 24/7 with our intelligent
+                        chatbot trained on SESAM graduate program policies and procedures.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Milestone Tracking */}
+                <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-purple-light/20">
+                      <ChartIcon className="h-5 w-5 text-accent-purple" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Smart Milestone Tracking</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/70">
+                        Track your progress from enrollment to graduation with automated
+                        reminders for proposal defense, comprehensive exams, and final defense.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Document Management */}
+                <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-green-light/20">
+                      <DocumentIcon className="h-5 w-5 text-accent-green" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Document Management</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/70">
+                        Organize thesis chapters, IRB applications, and progress reports with
+                        version control and real-time collaboration with your adviser.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
+          <div className="flex flex-col items-center gap-2 text-white/50">
+            <span className="text-xs">Scroll to explore</span>
+            <div className="h-6 w-px bg-white/30" />
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose SINAG Section */}
+      <section className="bg-gradient-page py-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-12">
+          <div className="mb-12 text-center">
+            <div className="pill-badge mx-auto mb-4 border border-[#1e3a5f]/20 bg-white text-[#1e3a5f]">
+              <SparklesIcon className="h-4 w-4" />
+              Why Choose SINAG?
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+              Transform Your Graduate Journey
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Experience the future of graduate advising with cutting-edge AI technology
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            <FeatureCard
+              icon={<LightningIcon className="h-6 w-6" />}
+              iconBg="icon-bg-amber"
+              title="Lightning Fast"
+              description="Get instant answers to your academic questions. No more waiting days for email responses. SINAG AI responds in seconds."
+            />
+            <FeatureCard
+              icon={<SparklesIcon className="h-6 w-6" />}
+              iconBg="icon-bg-purple"
+              title="Intelligent Guidance"
+              description="Trained on SESAM policies and best practices. Get personalized recommendations for your research journey."
+            />
+            <FeatureCard
+              icon={<UsersIcon className="h-6 w-6" />}
+              iconBg="icon-bg-pink"
+              title="Student-Centered"
+              description="Designed with students in mind. Track progress, manage documents, and stay organized throughout your degree."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* About SINAG Section */}
+      <section id="about" className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-12">
+          <div className="mb-12 text-center">
+            <div className="pill-badge mx-auto mb-4 border border-[#1e3a5f]/20 bg-[#1e3a5f]/5 text-[#1e3a5f]">
+              <BuildingIcon className="h-4 w-4" />
+              About SINAG
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+              Revolutionizing Graduate Education
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Empowering graduate education at UPLB SESAM through intelligent technology
+            </p>
+          </div>
+
+          <div className="grid gap-12 lg:grid-cols-2">
+            {/* Image */}
+            <div className="relative overflow-hidden rounded-2xl">
+              <img
+                src="https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80"
+                alt="SESAM Building"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a5f]/30 to-transparent" />
+            </div>
+
+            {/* Features List */}
+            <div className="space-y-6">
+              <AboutFeature
+                icon={<ChatIcon className="h-5 w-5" />}
+                iconBg="bg-accent-blue-light"
+                iconColor="text-accent-blue"
+                title="AI-Powered Consultation"
+                description="Get instant answers to academic questions with our intelligent natural language assistant trained on SESAM policies and best practices."
+              />
+              <AboutFeature
+                icon={<ChartIcon className="h-5 w-5" />}
+                iconBg="bg-accent-purple-light"
+                iconColor="text-accent-purple"
+                title="Milestone Tracking"
+                description="Track your progress through comprehensive milestone management, from proposal defense to final dissertation submission."
+              />
+              <AboutFeature
+                icon={<DocumentIcon className="h-5 w-5" />}
+                iconBg="bg-accent-green-light"
+                iconColor="text-accent-green"
+                title="Document Management"
+                description="Organize thesis chapters, IRB applications, and progress reports with version control and collaborative review features."
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Platform Features Section */}
+      <section id="features" className="bg-gradient-page py-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-12">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Platform Features</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Comprehensive tools designed specifically for SESAM graduate programs
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* For Students */}
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-blue-light">
+                <GraduationCapIcon className="h-6 w-6 text-accent-blue" />
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">For Students</h3>
+              <ul className="space-y-2">
+                <FeatureListItem text="Track milestones and deadlines" />
+                <FeatureListItem text="Get AI-powered research guidance" />
+                <FeatureListItem text="Manage documents & versions" />
+                <FeatureListItem text="Communicate with advisers" />
+              </ul>
+            </div>
+
+            {/* For Advisers */}
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-purple-light">
+                <UsersIcon className="h-6 w-6 text-accent-purple" />
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">For Advisers</h3>
+              <ul className="space-y-2">
+                <FeatureListItem text="Monitor advisee progress" />
+                <FeatureListItem text="Review & approve documents" />
+                <FeatureListItem text="Provide timely feedback" />
+                <FeatureListItem text="Track multiple advisees" />
+              </ul>
+            </div>
+
+            {/* For Coordinators */}
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-green-light">
+                <BuildingIcon className="h-6 w-6 text-accent-green" />
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">For Coordinators</h3>
+              <ul className="space-y-2">
+                <FeatureListItem text="Program-wide analytics" />
+                <FeatureListItem text="Manage defense schedules" />
+                <FeatureListItem text="Student success tracking" />
+                <FeatureListItem text="Accreditation reporting" />
+              </ul>
+            </div>
+
+            {/* AI Consultation */}
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-amber-light">
+                <SparklesIcon className="h-6 w-6 text-accent-amber" />
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">AI Consultation</h3>
+              <p className="mb-3 text-sm text-gray-600">
+                Natural language interface for instant academic guidance
+              </p>
+              <ul className="space-y-1 text-sm text-gray-500">
+                <li>• Research methodology advice</li>
+                <li>• Statistical test selection</li>
+                <li>• Academic policy queries</li>
+              </ul>
+            </div>
+
+            {/* Collaboration */}
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-pink-light">
+                <UsersIcon className="h-6 w-6 text-accent-pink" />
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">Collaboration</h3>
+              <p className="mb-3 text-sm text-gray-600">
+                Seamless communication between students and advisers
+              </p>
+              <ul className="space-y-1 text-sm text-gray-500">
+                <li>• Document comments</li>
+                <li>• Meeting scheduling</li>
+                <li>• Progress discussions</li>
+              </ul>
+            </div>
+
+            {/* Security */}
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-teal-light">
+                <ShieldIcon className="h-6 w-6 text-accent-teal" />
+              </div>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">Security</h3>
+              <p className="mb-3 text-sm text-gray-600">
+                Enterprise-grade security and privacy protection
+              </p>
+              <ul className="space-y-1 text-sm text-gray-500">
+                <li>• SSO authentication</li>
+                <li>• Encrypted data storage</li>
+                <li>• Role-based access</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Programs Section */}
+      <section id="programs" className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-6 md:px-12">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">SESAM Graduate Programs</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Supporting all UPLB SESAM degree programs with specialized workflows
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* MS Environmental Science */}
+            <div className="program-card-ms rounded-2xl bg-gray-50 p-6 transition-all hover:bg-white hover:shadow-card">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-blue text-white">
+                  <GraduationCapIcon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">M.S. in Environmental Science</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Comprehensive research training in environmental science with thesis or non-thesis options
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                <ClockIcon className="h-3.5 w-3.5" />
+                2-3 years completion
+              </div>
+            </div>
+
+            {/* PhD Environmental Science */}
+            <div className="program-card-phd rounded-2xl bg-gray-50 p-6 transition-all hover:bg-white hover:shadow-card">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-purple text-white">
+                  <DocumentIcon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Ph.D. in Environmental Science</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Advanced research degree preparing scholars for academic and research careers
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                <ClockIcon className="h-3.5 w-3.5" />
+                3-5 years completion
+              </div>
+            </div>
+
+            {/* PhD Environmental Diplomacy */}
+            <div className="program-card-diplomacy rounded-2xl bg-gray-50 p-6 transition-all hover:bg-white hover:shadow-card">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-green text-white">
+                  <GlobeIcon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Ph.D. in Environmental Diplomacy and Negotiations</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Specialized program focusing on environmental policy and international relations
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                <ClockIcon className="h-3.5 w-3.5" />
+                3-5 years completion
+              </div>
+            </div>
+
+            {/* PM-TMEM */}
+            <div className="program-card-tmem rounded-2xl bg-gray-50 p-6 transition-all hover:bg-white hover:shadow-card">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-teal text-white">
+                  <LeafIcon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Professional Masters in Tropical Marine Ecosystems Management (PM-TMEM)</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Professional degree for marine ecosystem conservation and management
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                <ClockIcon className="h-3.5 w-3.5" />
+                2 years completion
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative overflow-hidden bg-[#1e3a5f] py-20">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&q=80')`,
+          }}
+        />
+        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center md:px-12">
+          <h2 className="text-3xl font-bold text-white md:text-4xl">
+            Ready to Transform Your Graduate Journey?
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
+            Join hundreds of SESAM students and faculty using SINAG to streamline academic advising
+          </p>
+          <div className="mt-8 flex justify-center">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-base font-semibold text-[#1e3a5f] hover:bg-white/90"
+            >
+              Access SINAG Platform
+              <ChevronRightIcon className="h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Login Modal */}
+      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
+    </div>
+  );
+}
+
+/* =================================================================
+   Component Definitions
+   ================================================================= */
+
+function FeatureCard({
+  icon,
+  iconBg,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="card-hover rounded-2xl bg-white p-6 shadow-card">
+      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}>
+        {icon}
+      </div>
+      <h3 className="mb-2 text-lg font-semibold text-gray-900">{title}</h3>
+      <p className="text-sm leading-relaxed text-gray-600">{description}</p>
+    </div>
+  );
+}
+
+function AboutFeature({
+  icon,
+  iconBg,
+  iconColor,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
+        {icon}
+      </div>
+      <div>
+        <h3 className="font-semibold text-gray-900">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-gray-600">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function FeatureListItem({ text }: { text: string }) {
+  return (
+    <li className="flex items-center gap-2 text-sm text-gray-600">
+      <CheckIcon className="h-4 w-4 shrink-0 text-accent-green" />
+      {text}
+    </li>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="bg-[#0f172a] py-12 text-white">
+      <div className="mx-auto max-w-7xl px-6 md:px-12">
+        <div className="grid gap-8 md:grid-cols-3">
+          {/* Logo & Description */}
+          <div>
+            <div className="flex items-center gap-2">
+              <SparklesIcon className="h-6 w-6" />
+              <span className="text-lg font-bold">SINAG</span>
+            </div>
+            <p className="mt-2 text-sm text-white/60">UPLB SESAM</p>
+            <p className="mt-4 text-xs leading-relaxed text-white/50">
+              School of Environmental Science and Management
+              <br />
+              University of the Philippines Los Baños
+              <br />
+              College, Los Baños, Laguna 4031
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="mb-4 font-semibold">Quick Links</h4>
+            <ul className="space-y-2 text-sm text-white/60">
+              <li>
+                <Link href="#" className="hover:text-white">
+                  SESAM Website
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="hover:text-white">
+                  UPLB Homepage
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="hover:text-white">
+                  Graduate Programs
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="hover:text-white">
+                  Support
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="mb-4 font-semibold">Contact</h4>
+            <ul className="space-y-2 text-sm text-white/60">
+              <li>Email: sesam@uplb.edu.ph</li>
+              <li>Phone: (049) 536-2509</li>
+              <li>Office Hours: Mon-Fri, 8AM-5PM</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 border-t border-white/10 pt-8 text-center text-xs text-white/40">
+          © {new Date().getFullYear()} SINAG - SESAM Intelligent Natural-language Advising Guide. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function LoginModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login, loading, error } = useAuth();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const user = await login(email, password);
+      router.push(`/${user.role}`);
+    } catch {
+      // error handled in hook
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Welcome to SINAG</h2>
+          <p className="mt-1 text-sm text-gray-500">AI-Powered Graduate Advising Platform</p>
+        </div>
+
+        {/* SSO Button */}
+        <button className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-3 text-sm font-medium text-white hover:bg-[#162b45]">
+          <BuildingIcon className="h-4 w-4" />
+          Sign in with UPLB SSO
+        </button>
+
+        <div className="relative mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-white px-2 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-700">Institutional Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@uplb.edu.ph"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-700">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]"
+              required
+            />
+          </div>
+
+          {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full items-center justify-center rounded-lg bg-[#1e3a5f] px-4 py-3 text-sm font-medium text-white hover:bg-[#162b45] disabled:opacity-50"
+          >
+            {loading ? <LoadingSpinner size={16} className="text-white" /> : 'Sign In'}
+          </button>
+
+          <div className="text-center">
+            <Link href="#" className="text-xs text-[#1e3a5f] hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+
+          <div className="text-center text-xs text-gray-500">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-[#1e3a5f] hover:underline">
+              Create one
+            </Link>
+          </div>
+        </form>
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full rounded-lg border border-gray-200 py-2 text-sm text-gray-600 hover:bg-gray-50"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* Additional Icon Components */
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
