@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import LoadingSpinner from '@/app/components/LoadingSpinner';
 import { useAuth } from '@/app/hooks/useAuth';
+import { useApiFetch } from '@/app/hooks/useApiFetch';
+import StatsCard from '@/app/components/StatsCard';
+import LoadingSpinner from '@/app/components/LoadingSpinner';
 import {
   UsersIcon,
   ChartIcon,
@@ -13,72 +13,74 @@ import {
   CalendarIcon,
   PlusIcon,
   DocumentArrowDownIcon,
+  CheckIcon,
 } from '@/app/components/Icons';
 
+// TypeScript interfaces
+interface CoordinatorStats {
+  totalStudents: number;
+  activeAdvisers: number;
+  completionRate: string;
+  overdueItems: number;
+  adviserWorkload: {
+    adviserId: string;
+    name: string;
+    students: number;
+    maxStudents: number;
+    utilizationRate: number;
+  }[];
+}
+
 interface StudentAssignment {
-  id: string;
+  _id: string;
   name: string;
   program: string;
-  adviser: string | null;
+  studentNumber: string;
+  adviser: {
+    _id: string | null;
+    name: string | null;
+  };
   unassigned: boolean;
 }
 
-interface Announcement {
-  id: string;
-  title: string;
-  type: string;
-  date: string;
-  activeUntil: string;
-  targetAudience: string;
+// Custom hook for coordinator dashboard data
+function useCoordinatorDashboard() {
+  const stats = useApiFetch<CoordinatorStats>({ url: '/api/analytics/coordinator' });
+  const assignments = useApiFetch<{ students: StudentAssignment[] }>({
+    url: '/api/students/assignments',
+    transform: (data) => ({
+      students: data.students.map((s: any) => ({
+        _id: s.studentId,
+        name: s.studentName,
+        program: s.program,
+        studentNumber: s.studentNumber,
+        adviser: {
+          _id: s.adviserId,
+          name: s.adviserName,
+        },
+        unassigned: !s.isAssigned,
+      })),
+    }),
+  });
+
+  return {
+    stats: stats.data,
+    assignments: assignments.data?.students || [],
+    loading: stats.loading || assignments.loading,
+    error: stats.error || assignments.error,
+    refetch: () => {
+      stats.refetch();
+      assignments.refetch();
+    },
+  };
 }
 
 export default function CoordinatorDashboard() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { stats, assignments, loading, error, refetch } = useCoordinatorDashboard();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        // Simulated data fetch
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
-  // Mock data from Figma
-  const stats = {
-    totalStudents: 22,
-    activeAdvisers: 5,
-    completionRate: '89%',
-    overdueItems: 3,
-  };
-
-  const adviserWorkload = [
-    { name: 'Dr. Wilson', students: 6 },
-    { name: 'Dr. Smith', students: 5 },
-    { name: 'Dr. Johnson', students: 4 },
-    { name: 'Dr. Brown', students: 4 },
-    { name: 'Dr. Davis', students: 3 },
-  ];
-
-  const assignments: StudentAssignment[] = [
-    { id: '1', name: 'Maria Santos', program: 'M.S. in Environmental Science', adviser: 'Dr. Ramon Santos', unassigned: false },
-    { id: '2', name: 'Carlos Reyes', program: 'Ph.D. in Environmental Science', adviser: 'Dr. Ramon Santos', unassigned: false },
-    { id: '3', name: 'Isabel Cruz', program: 'Ph.D. in Environmental Diplomacy and Negotiations', adviser: 'Dr. Ramon Santos', unassigned: false },
-    { id: '4', name: 'Miguel Dela Cruz', program: 'PM-TMEM', adviser: 'Dr. Sofia Reyes', unassigned: false },
-    { id: '5', name: 'Ana Bautista', program: 'Ph.D. in Environmental Science', adviser: 'Dr. Sofia Reyes', unassigned: false },
-    { id: '6', name: 'Roberto Torres', program: 'M.S. in Environmental Science', adviser: 'Dr. Maria Gonzales', unassigned: false },
-    { id: '7', name: 'Jennifer Aquino', program: 'Ph.D. in Environmental Diplomacy and Negotiations', adviser: null, unassigned: true },
-  ];
-
-  const announcements: Announcement[] = [
+  // Keep announcements hardcoded (they're different from stats data)
+  const announcements = [
     {
       id: '1',
       title: 'Spring 2026 Defense Schedule Released',
@@ -113,38 +115,89 @@ export default function CoordinatorDashboard() {
         <p className="mt-1 text-gray-600">Graduate Programs Management</p>
       </div>
 
-      {error && <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={refetch}
+            className="text-red-700 underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Using shared StatsCard */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SimpleStatCard value={stats.totalStudents.toString()} label="Total Active Students" />
-        <SimpleStatCard value={stats.activeAdvisers.toString()} label="Active Advisers" />
-        <SimpleStatCard value={stats.completionRate} label="Completion Rate" valueColor="text-[#1e3a5f]" />
-        <SimpleStatCard value={stats.overdueItems.toString()} label="Overdue Items" valueColor="text-red-600" />
+        <StatsCard
+          title="Total Students"
+          value={stats?.totalStudents || 0}
+          loading={loading}
+          icon={<UsersIcon className="h-5 w-5" />}
+        />
+        <StatsCard
+          title="Active Advisers"
+          value={stats?.activeAdvisers || 0}
+          loading={loading}
+          icon={<UsersIcon className="h-5 w-5" />}
+        />
+        <StatsCard
+          title="Completion Rate"
+          value={stats?.completionRate || '0%'}
+          loading={loading}
+          icon={<CheckIcon className="h-5 w-5" />}
+        />
+        <StatsCard
+          title="Overdue Items"
+          value={stats?.overdueItems || 0}
+          loading={loading}
+          icon={<ClockIcon className="h-5 w-5" />}
+        />
       </div>
 
       {/* Charts Section */}
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        {/* Adviser Workload Chart */}
         <div className="rounded-xl bg-white p-6 shadow-card">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Students Per Adviser</h2>
-          <div className="space-y-3">
-            {adviserWorkload.map((adviser) => (
-              <div key={adviser.name} className="flex items-center gap-4">
-                <span className="w-24 text-sm text-gray-600">{adviser.name}</span>
-                <div className="flex-1">
-                  <div className="h-8 rounded bg-gray-100">
-                    <div
-                      className="h-8 rounded bg-[#1e3a5f]"
-                      style={{ width: `${(adviser.students / 8) * 100}%` }}
-                    />
-                  </div>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-24 h-4 bg-gray-200 animate-pulse rounded" />
+                  <div className="flex-1 h-8 bg-gray-200 animate-pulse rounded" />
+                  <div className="w-8 h-4 bg-gray-200 animate-pulse rounded" />
                 </div>
-                <span className="w-8 text-sm font-medium text-gray-900">{adviser.students}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {stats?.adviserWorkload?.map((adviser) => (
+                <div key={adviser.adviserId} className="flex items-center gap-4">
+                  <span className="w-24 text-sm text-gray-600">{adviser.name}</span>
+                  <div className="flex-1">
+                    <div className="h-8 rounded bg-gray-100">
+                      <div
+                        className="h-8 rounded bg-[#1e3a5f]"
+                        style={{
+                          width: `${
+                            (adviser.students /
+                              Math.max(...stats.adviserWorkload.map((a) => a.students))) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="w-8 text-sm font-medium text-gray-900">{adviser.students}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* Milestone Completion Placeholder */}
         <div className="rounded-xl bg-white p-6 shadow-card">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Milestone Completion Rates</h2>
           <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-gray-300">
@@ -153,7 +206,7 @@ export default function CoordinatorDashboard() {
         </div>
       </div>
 
-      {/* Adviser Assignments */}
+      {/* Adviser Assignments Table */}
       <div className="mb-8 rounded-xl bg-white p-6 shadow-card">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Adviser Assignments</h2>
@@ -181,26 +234,52 @@ export default function CoordinatorDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {assignments.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{student.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{student.program}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {student.unassigned ? (
-                      <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700">
-                        Unassigned
-                      </span>
-                    ) : (
-                      student.adviser
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <button className="font-medium text-[#1e3a5f] hover:underline">
-                      {student.unassigned ? 'Assign' : 'Reassign'}
-                    </button>
+              {loading ? (
+                // Skeleton rows
+                [1, 2, 3].map((i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 animate-pulse rounded w-32" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 animate-pulse rounded w-24" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 animate-pulse rounded w-20" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 animate-pulse rounded w-16" />
+                    </td>
+                  </tr>
+                ))
+              ) : assignments.length > 0 ? (
+                assignments.map((student) => (
+                  <tr key={student._id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{student.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{student.program}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {student.unassigned ? (
+                        <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700">
+                          Unassigned
+                        </span>
+                      ) : (
+                        student.adviser.name
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button className="font-medium text-[#1e3a5f] hover:underline">
+                        {student.unassigned ? 'Assign' : 'Reassign'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
+                    No students found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -274,7 +353,8 @@ export default function CoordinatorDashboard() {
                 <div>
                   <h3 className="font-medium text-gray-900">{announcement.title}</h3>
                   <p className="mt-1 text-sm text-gray-600">
-                    The defense schedule for Spring 2026 is now available. Please review and confirm your dates.
+                    The defense schedule for Spring 2026 is now available. Please review and confirm
+                    your dates.
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
@@ -291,23 +371,6 @@ export default function CoordinatorDashboard() {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function SimpleStatCard({
-  value,
-  label,
-  valueColor = 'text-gray-900',
-}: {
-  value: string;
-  label: string;
-  valueColor?: string;
-}) {
-  return (
-    <div className="rounded-xl bg-white p-4 shadow-card">
-      <p className={`text-3xl font-bold ${valueColor}`}>{value}</p>
-      <p className="text-sm text-gray-600">{label}</p>
     </div>
   );
 }
@@ -332,5 +395,3 @@ function ReportCard({ title, description }: { title: string; description: string
     </div>
   );
 }
-
-
