@@ -113,7 +113,7 @@ export function useAuth() {
       // ignore
     }
     setState({ user: null, loading: false, error: null });
-    window.location.href = '/login';
+    window.location.href = '/';
   }, []);
 
   return {

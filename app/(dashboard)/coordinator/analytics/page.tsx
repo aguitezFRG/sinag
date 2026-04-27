@@ -92,7 +92,7 @@ export default function CoordinatorAnalyticsPage() {
   const maxWorkflows = Math.max(...workflowsData.map((d) => d.count), 1);
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
         <p className="text-sm text-gray-500">Program-level insights and usage metrics</p>

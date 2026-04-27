@@ -13,6 +13,8 @@ import {
   Users,
   Settings,
   X,
+  Calendar,
+  Search,
 } from 'lucide-react';
 
 interface NavItem {
@@ -28,22 +30,28 @@ const navItems: NavItem[] = [
   { label: 'My Advising Plan', href: '/student/workflow', icon: <FileText className="w-5 h-5" />, roles: ['student'] },
   { label: 'AI Consultation', href: '/student/ai-chat', icon: <MessageSquare className="w-5 h-5" />, roles: ['student'] },
   { label: 'Documents', href: '/student/documents', icon: <GraduationCap className="w-5 h-5" />, roles: ['student'] },
+  { label: 'Calendar', href: '/calendar', icon: <Calendar className="w-5 h-5" />, roles: ['student'] },
 
   /* Adviser */
   { label: 'Dashboard', href: '/adviser', icon: <Home className="w-5 h-5" />, roles: ['adviser'] },
   { label: 'Advisees', href: '/adviser/students', icon: <Users className="w-5 h-5" />, roles: ['adviser'] },
   { label: 'Reviews', href: '/adviser/reviews', icon: <FileText className="w-5 h-5" />, roles: ['adviser'] },
+  { label: 'AI Chat', href: '/adviser/ai-chat', icon: <MessageSquare className="w-5 h-5" />, roles: ['adviser'] },
+  { label: 'Calendar', href: '/calendar', icon: <Calendar className="w-5 h-5" />, roles: ['adviser'] },
+  { label: 'Search', href: '/search', icon: <Search className="w-5 h-5" />, roles: ['adviser'] },
 
   /* Coordinator */
   { label: 'Dashboard', href: '/coordinator', icon: <Home className="w-5 h-5" />, roles: ['coordinator'] },
   { label: 'Students', href: '/coordinator/workflows', icon: <Users className="w-5 h-5" />, roles: ['coordinator'] },
   { label: 'Analytics', href: '/coordinator/analytics', icon: <Bell className="w-5 h-5" />, roles: ['coordinator'] },
+  { label: 'Calendar', href: '/calendar', icon: <Calendar className="w-5 h-5" />, roles: ['coordinator'] },
 
   /* Admin */
   { label: 'Dashboard', href: '/admin', icon: <Home className="w-5 h-5" />, roles: ['admin'] },
   { label: 'User Management', href: '/admin/users', icon: <Users className="w-5 h-5" />, roles: ['admin'] },
   { label: 'Audit Logs', href: '/admin/audit-logs', icon: <FileText className="w-5 h-5" />, roles: ['admin'] },
   { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" />, roles: ['admin'] },
+  { label: 'Calendar', href: '/calendar', icon: <Calendar className="w-5 h-5" />, roles: ['admin'] },
 ];
 
 interface SidebarProps {
@@ -59,12 +67,12 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex fixed lg:static inset-y-0 left-0 z-50 w-64 flex-shrink-0 bg-[#0C0B5D] text-white flex-col">
+      <aside className="hidden md:flex w-64 flex-shrink-0 bg-[#0C0B5D] text-white flex-col sticky top-0 h-screen">
         {/* SINAG Logo */}
         <div className="p-4 sm:p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex-shrink-0 overflow-hidden bg-white flex items-center justify-center">
-              <Image src="/images/logo.png" alt="SINAG" width={40} height={40} style={{ width: '40px', height: '40px' }} />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex-shrink-0 overflow-hidden bg-white relative">
+              <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="56px" />
             </div>
             <div>
               <h1 className="text-lg sm:text-xl text-white font-bold">SINAG</h1>
@@ -75,8 +83,15 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
         {/* Navigation */}
         <nav className="flex-1 p-3 sm:p-4 overflow-y-auto">
           <ul className="space-y-1">
-            {items.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            {(() => {
+              const activeHref = items.reduce<string | null>((best, it) => {
+                if (pathname === it.href || pathname.startsWith(`${it.href}/`)) {
+                  if (!best || it.href.length > best.length) return it.href;
+                }
+                return best;
+              }, null);
+              return items.map((item) => {
+              const isActive = item.href === activeHref;
               return (
                 <li key={item.href}>
                   <Link
@@ -92,7 +107,8 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
                   </Link>
                 </li>
               );
-            })}
+            });
+            })()}
           </ul>
         </nav>
       </aside>
@@ -111,8 +127,8 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
             {/* SINAG Logo + Close Button */}
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white flex items-center justify-center">
-                  <Image src="/images/logo.png" alt="SINAG" width={40} height={40} style={{ width: '40px', height: '40px' }} />
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white relative">
+                  <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="48px" />
                 </div>
                 <h1 className="text-lg text-white font-bold">SINAG</h1>
               </div>
@@ -128,8 +144,15 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
             {/* Navigation */}
             <nav className="flex-1 p-3 overflow-y-auto">
               <ul className="space-y-1">
-                {items.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                {(() => {
+                  const activeHref = items.reduce<string | null>((best, it) => {
+                    if (pathname === it.href || pathname.startsWith(`${it.href}/`)) {
+                      if (!best || it.href.length > best.length) return it.href;
+                    }
+                    return best;
+                  }, null);
+                  return items.map((item) => {
+                  const isActive = item.href === activeHref;
                   return (
                     <li key={item.href}>
                       <Link
@@ -146,7 +169,8 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
                       </Link>
                     </li>
                   );
-                })}
+                  });
+                })()}
               </ul>
             </nav>
           </aside>

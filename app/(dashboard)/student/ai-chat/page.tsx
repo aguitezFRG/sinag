@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import MarkdownMessage from '@/app/components/MarkdownMessage';
 import { 
   Send, 
   Paperclip, 
@@ -551,33 +552,7 @@ export default function AIChatPage() {
                       </div>
                       <div className="flex-1">
                         <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 sm:px-5 py-3 sm:py-4 shadow-sm">
-                          <div className="prose prose-sm max-w-none">
-                            {message.content.split('\n').map((line, idx) => {
-                              if (line.startsWith('**') && line.endsWith('**')) {
-                                return <p key={idx} className="font-bold text-gray-900 mt-3 mb-1">{line.replace(/\*\*/g, '')}</p>;
-                              }
-                              if (line.startsWith('•')) {
-                                return <p key={idx} className="ml-4 text-gray-700 text-sm sm:text-base">{line}</p>;
-                              }
-                              if (line.startsWith('✓')) {
-                                return <p key={idx} className="ml-4 text-green-700 text-sm sm:text-base">{line}</p>;
-                              }
-                              if (line.startsWith('⚠️')) {
-                                return <p key={idx} className="text-orange-700 font-semibold mt-3 text-sm sm:text-base">{line}</p>;
-                              }
-                              if (line.startsWith('🔗')) {
-                                return (
-                                  <p key={idx} className="mt-2">
-                                    <a href="#" className="text-[#0C0B5D] hover:underline text-sm sm:text-base">{line}</a>
-                                  </p>
-                                );
-                              }
-                              if (line.trim() === '') {
-                                return <div key={idx} className="h-2" />;
-                              }
-                              return <p key={idx} className="text-gray-700 text-sm sm:text-base">{line}</p>;
-                            })}
-                          </div>
+                          <MarkdownMessage content={message.content} />
                           <p className="text-xs text-gray-400 mt-3">{message.timestamp}</p>
                         </div>
 
@@ -618,26 +593,7 @@ export default function AIChatPage() {
                     </div>
                     <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm">
                       {streamingText ? (
-                        <div className="prose prose-sm max-w-none">
-                          {streamingText.split('\n').map((line, idx) => {
-                            if (line.startsWith('**') && line.endsWith('**')) {
-                              return <p key={idx} className="font-bold text-gray-900 mt-3 mb-1">{line.replace(/\*\*/g, '')}</p>;
-                            }
-                            if (line.startsWith('•')) {
-                              return <p key={idx} className="ml-4 text-gray-700 text-sm">{line}</p>;
-                            }
-                            if (line.startsWith('✓')) {
-                              return <p key={idx} className="ml-4 text-green-700 text-sm">{line}</p>;
-                            }
-                            if (line.startsWith('⚠️')) {
-                              return <p key={idx} className="text-orange-700 font-semibold mt-3 text-sm">{line}</p>;
-                            }
-                            if (line.trim() === '') {
-                              return <div key={idx} className="h-2" />;
-                            }
-                            return <p key={idx} className="text-gray-700 text-sm">{line}</p>;
-                          })}
-                        </div>
+                        <MarkdownMessage content={streamingText} className="streaming" />
                       ) : (
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />

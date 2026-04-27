@@ -171,9 +171,13 @@ export default function LandingPage() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                <Leaf className="w-8 h-8 text-[#0C0B5D]" />
-              </div>
+              <Image
+                src="/images/favicon.png"
+                alt="SINAG logo"
+                width={48}
+                height={48}
+                className="rounded-lg"
+              />
               <div className="hidden sm:block">
                 <div className="text-white font-bold text-xl leading-tight">SINAG</div>
                 <div className="text-white/70 text-xs">UPLB SESAM</div>
@@ -839,9 +843,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                  <Leaf className="w-8 h-8 text-[#0C0B5D]" />
-                </div>
+                <Image
+                  src="/images/favicon.png"
+                  alt="SINAG logo"
+                  width={48}
+                  height={48}
+                  className="rounded-lg"
+                />
                 <div>
                   <div className="text-xl font-bold">SINAG</div>
                   <div className="text-xs text-gray-400">UPLB SESAM</div>

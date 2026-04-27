@@ -45,7 +45,7 @@ export default function StudentWorkflowPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">My Workflow</h2>
         <p className="text-sm text-gray-500">Track your thesis milestones and deadlines</p>

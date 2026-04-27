@@ -24,7 +24,7 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
-      <div className="flex min-h-screen bg-gray-50 overflow-hidden">
+      <div className="flex h-screen bg-gray-50 overflow-hidden">
         {user && (
           <Sidebar
             role={user.role}
@@ -33,7 +33,7 @@ export default function DashboardLayout({
           />
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col w-full lg:w-auto">
+        <div className="flex-1 min-w-0 flex flex-col">
           {user && (
             <Header
               user={user}
