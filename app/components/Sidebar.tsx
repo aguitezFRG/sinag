@@ -59,12 +59,12 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex fixed lg:static inset-y-0 left-0 z-50 w-64 flex-shrink-0 bg-[#0C0B5D] text-white flex-col">
+      <aside className="hidden md:flex w-64 flex-shrink-0 bg-[#0C0B5D] text-white flex-col">
         {/* SINAG Logo */}
         <div className="p-4 sm:p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex-shrink-0 overflow-hidden bg-white flex items-center justify-center">
-              <Image src="/images/logo.png" alt="SINAG" width={40} height={40} style={{ width: '40px', height: '40px' }} />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex-shrink-0 overflow-hidden bg-white relative">
+              <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="56px" />
             </div>
             <div>
               <h1 className="text-lg sm:text-xl text-white font-bold">SINAG</h1>
@@ -75,8 +75,15 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
         {/* Navigation */}
         <nav className="flex-1 p-3 sm:p-4 overflow-y-auto">
           <ul className="space-y-1">
-            {items.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            {(() => {
+              const activeHref = items.reduce<string | null>((best, it) => {
+                if (pathname === it.href || pathname.startsWith(`${it.href}/`)) {
+                  if (!best || it.href.length > best.length) return it.href;
+                }
+                return best;
+              }, null);
+              return items.map((item) => {
+              const isActive = item.href === activeHref;
               return (
                 <li key={item.href}>
                   <Link
@@ -92,7 +99,8 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
                   </Link>
                 </li>
               );
-            })}
+            });
+            })()}
           </ul>
         </nav>
       </aside>
@@ -111,8 +119,8 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
             {/* SINAG Logo + Close Button */}
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white flex items-center justify-center">
-                  <Image src="/images/logo.png" alt="SINAG" width={40} height={40} style={{ width: '40px', height: '40px' }} />
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white relative">
+                  <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="48px" />
                 </div>
                 <h1 className="text-lg text-white font-bold">SINAG</h1>
               </div>
@@ -128,8 +136,15 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
             {/* Navigation */}
             <nav className="flex-1 p-3 overflow-y-auto">
               <ul className="space-y-1">
-                {items.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                {(() => {
+                  const activeHref = items.reduce<string | null>((best, it) => {
+                    if (pathname === it.href || pathname.startsWith(`${it.href}/`)) {
+                      if (!best || it.href.length > best.length) return it.href;
+                    }
+                    return best;
+                  }, null);
+                  return items.map((item) => {
+                  const isActive = item.href === activeHref;
                   return (
                     <li key={item.href}>
                       <Link
@@ -146,7 +161,8 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
                       </Link>
                     </li>
                   );
-                })}
+                  });
+                })()}
               </ul>
             </nav>
           </aside>

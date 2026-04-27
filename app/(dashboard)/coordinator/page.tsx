@@ -106,7 +106,7 @@ export default function CoordinatorDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 mx-auto max-w-7xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Program Coordinator Dashboard</h1>

@@ -90,8 +90,8 @@ export default function Header({ user, onMenuClick, onLogout }: HeaderProps) {
 
         {/* SINAG Branding */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-[#0C0B5D] rounded-lg overflow-hidden p-1.5 flex items-center justify-center">
-            <Image src="/images/logo.png" alt="SINAG" width={40} height={40} style={{ width: '40px', height: '40px' }} />
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-[#0C0B5D] rounded-lg overflow-hidden relative">
+            <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="44px" />
           </div>
           <div className="hidden sm:block">
             <h1 className="text-sm font-bold text-[#0C0B5D]">SINAG</h1>

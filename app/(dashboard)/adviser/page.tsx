@@ -168,7 +168,7 @@ export default function AdviserDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 mx-auto max-w-7xl">
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div>

@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SINAG — AI-Powered Thesis Advising",
   description: "SINAG is an AI-powered, natural language-driven consultation platform for graduate thesis and dissertation advising within SESAM, UPLB.",
+  icons: { icon: '/images/favicon.png' },
 };
 
 export default function RootLayout({

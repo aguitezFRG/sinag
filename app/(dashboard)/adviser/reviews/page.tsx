@@ -117,7 +117,7 @@ export default function AdviserReviewsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Pending Reviews</h2>
         <p className="text-sm text-gray-500">Review and provide feedback on student submissions</p>
