@@ -41,22 +41,18 @@ yarn-error.log*
 next-env.d.ts
 
 *.py
-*.mjs
+ *.mjs
 docs/
 imports/
-
-# local dev / tooling
-.opencode/
-.sinag-run.pids
-run-with-tunnel.sh
+lib/
 logs/
+# models/
+private/
+supported-queries/
 
-# test artifacts
-test_screenshots/
-*_TEST_REPORT.md
-TESTING*.md
-
-# planning docs
-DASHBOARD_UPDATE_PLAN.md
-lib/dummy-data-model.md
-lib/dummy-data-plan.md
+*.sh
+*.json
+*.md
+AGENTS.models
+*.mjs
+*.pids
