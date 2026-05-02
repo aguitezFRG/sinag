@@ -9,9 +9,9 @@ export interface AuthContext {
 
 export async function withAuth(
   req: NextRequest,
-  handler: (req: NextRequest, auth: AuthContext) => Promise<NextResponse>,
+  handler: (req: NextRequest, auth: AuthContext) => Promise<NextResponse | Response>,
   allowedRoles?: UserRole[]
-): Promise<NextResponse> {
+): Promise<NextResponse | Response> {
   const token = req.cookies.get('token')?.value;
 
   if (!token) {
