@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import {
-  students,
-  advisers,
-  users,
-  workflows,
-  documents,
-} from '@/lib/dummy-data';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ============================================
 // RESPONSE TYPE INTERFACES
@@ -54,21 +48,29 @@ export async function GET(req: NextRequest) {
     req,
     async (_req, auth) => {
       try {
-        // Calculate coordinator statistics
+        const [studentsRes, advisersRes, workflowsRes, stagesRes, usersRes, documentsRes] =
+          await Promise.all([
+            supabaseAdmin.from('students').select('id, user_id, adviser_id, program, created_at'),
+            supabaseAdmin.from('advisers').select('id, user_id, max_students'),
+            supabaseAdmin.from('workflows').select('id, student_id, created_at'),
+            supabaseAdmin.from('workflow_stages').select('workflow_id, status, due_date'),
+            supabaseAdmin.from('users').select('id, first_name, last_name'),
+            supabaseAdmin.from('documents').select('owner_id, created_at'),
+          ]);
+        const students = studentsRes.data ?? [];
+        const advisers = advisersRes.data ?? [];
+        const workflows = workflowsRes.data ?? [];
+        const stages = stagesRes.data ?? [];
+        const users = usersRes.data ?? [];
+        const documents = documentsRes.data ?? [];
+
         const totalStudents = students.length;
         const activeAdvisers = advisers.length;
-        const unassignedStudents = students.filter((s) => !s.adviserId).length;
+        const unassignedStudents = students.filter((s) => !s.adviser_id).length;
 
         // Calculate completion rate from workflows
-        const totalMilestones = workflows.reduce(
-          (acc, w) => acc + w.stages.length,
-          0
-        );
-        const completedMilestones = workflows.reduce(
-          (acc, w) =>
-            acc + w.stages.filter((s: any) => s.status === 'approved').length,
-          0
-        );
+        const totalMilestones = stages.length;
+        const completedMilestones = stages.filter((s) => s.status === 'approved').length;
         const completionRate =
           totalMilestones > 0
             ? Math.round((completedMilestones / totalMilestones) * 100)
@@ -76,34 +78,28 @@ export async function GET(req: NextRequest) {
 
         // Count overdue items (stages with past due dates not yet approved)
         const now = new Date();
-        const overdueItems = workflows.reduce((acc, w) => {
-          return (
-            acc +
-            w.stages.filter((s: any) => {
-              if (s.status === 'approved' || s.status === 'completed')
-                return false;
-              const dueDate = new Date(s.dueDate);
-              return dueDate < now;
-            }).length
-          );
-        }, 0);
+        const overdueItems = stages.filter((s) => {
+          if (s.status === 'approved' || s.status === 'completed') return false;
+          if (!s.due_date) return false;
+          return new Date(s.due_date) < now;
+        }).length;
 
         // Calculate adviser workload distribution
         const adviserWorkload: AdviserWorkloadItem[] = advisers
           .map((adviser) => {
-            const user = users.find((u) => u._id === adviser.userId);
+            const user = users.find((u) => u.id === adviser.user_id);
             const studentCount = students.filter(
-              (s) => s.adviserId === adviser._id
+              (s) => s.adviser_id === adviser.id
             ).length;
             return {
-              adviserId: adviser._id,
+              adviserId: adviser.id,
               name: user
-                ? `Dr. ${user.profile.firstName} ${user.profile.lastName}`
+                ? `Dr. ${user.first_name} ${user.last_name}`
                 : 'Unknown',
               students: studentCount,
-              maxStudents: adviser.maxStudents,
+              maxStudents: adviser.max_students,
               utilizationRate: Math.round(
-                (studentCount / adviser.maxStudents) * 100
+                (studentCount / adviser.max_students) * 100
               ),
             };
           })
@@ -112,40 +108,40 @@ export async function GET(req: NextRequest) {
         // Get recent assignments (students with recent adviser assignments or unassigned)
         const recentAssignments: RecentAssignment[] = students
           .map((student) => {
-            const user = users.find((u) => u._id === student.userId);
-            const adviser = student.adviserId
-              ? advisers.find((a) => a._id === student.adviserId)
+            const user = users.find((u) => u.id === student.user_id);
+            const adviser = student.adviser_id
+              ? advisers.find((a) => a.id === student.adviser_id)
               : null;
             const adviserUser = adviser
-              ? users.find((u) => u._id === adviser.userId)
+              ? users.find((u) => u.id === adviser.user_id)
               : null;
 
             // Find the most recent document or workflow activity for this student
             const studentWorkflow = workflows.find(
-              (w) => w.studentId === student._id
+              (w) => w.student_id === student.id
             );
             const recentDoc = documents
-              .filter((d) => d.ownerId === student.userId)
+              .filter((d) => d.owner_id === student.user_id)
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
               )[0];
 
-            const assignedAt = recentDoc?.createdAt || studentWorkflow?.createdAt;
+            const assignedAt = recentDoc?.created_at || studentWorkflow?.created_at;
 
             return {
-              studentId: student._id,
+              studentId: student.id,
               studentName: user
-                ? `${user.profile.firstName} ${user.profile.lastName}`
+                ? `${user.first_name} ${user.last_name}`
                 : 'Unknown',
               program: student.program,
-              adviserId: student.adviserId,
+              adviserId: student.adviser_id,
               adviserName: adviserUser
-                ? `Dr. ${adviserUser.profile.firstName} ${adviserUser.profile.lastName}`
+                ? `Dr. ${adviserUser.first_name} ${adviserUser.last_name}`
                 : null,
               assignedAt: assignedAt || null,
-              status: (student.adviserId ? 'assigned' : 'unassigned') as 'assigned' | 'unassigned',
+              status: (student.adviser_id ? 'assigned' : 'unassigned') as 'assigned' | 'unassigned',
             };
           })
           .sort((a, b) => {
@@ -170,7 +166,7 @@ export async function GET(req: NextRequest) {
             program: 'MSES',
             students: students.filter((s) => s.program === 'MSES').length,
             workflows: workflows.filter((w) => {
-              const student = students.find((s) => s._id === w.studentId);
+              const student = students.find((s) => s.id === w.student_id);
               return student?.program === 'MSES';
             }).length,
           },
@@ -178,7 +174,7 @@ export async function GET(req: NextRequest) {
             program: 'PhD-ES',
             students: students.filter((s) => s.program === 'PhD-ES').length,
             workflows: workflows.filter((w) => {
-              const student = students.find((s) => s._id === w.studentId);
+              const student = students.find((s) => s.id === w.student_id);
               return student?.program === 'PhD-ES';
             }).length,
           },
@@ -186,7 +182,7 @@ export async function GET(req: NextRequest) {
             program: 'PhD-EDN',
             students: students.filter((s) => s.program === 'PhD-EDN').length,
             workflows: workflows.filter((w) => {
-              const student = students.find((s) => s._id === w.studentId);
+              const student = students.find((s) => s.id === w.student_id);
               return student?.program === 'PhD-EDN';
             }).length,
           },
@@ -194,7 +190,7 @@ export async function GET(req: NextRequest) {
             program: 'PM-TMEM',
             students: students.filter((s) => s.program === 'PM-TMEM').length,
             workflows: workflows.filter((w) => {
-              const student = students.find((s) => s._id === w.studentId);
+              const student = students.find((s) => s.id === w.student_id);
               return student?.program === 'PM-TMEM';
             }).length,
           },

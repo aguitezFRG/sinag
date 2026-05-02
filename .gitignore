@@ -41,6 +41,18 @@ yarn-error.log*
 next-env.d.ts
 
 *.py
-*.mjs
+ *.mjs
 docs/
 imports/
+lib/
+logs/
+# models/
+private/
+supported-queries/
+
+*.sh
+*.json
+*.md
+AGENTS.models
+*.mjs
+*.pids

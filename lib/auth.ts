@@ -22,6 +22,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export async function createToken(payload: TokenPayload): Promise<string> {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'sinag-dev-secret-change-in-production')
+  ) {
+    throw new Error('JWT_SECRET is not configured securely for production');
+  }
+
   return new SignJWT(payload as any)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -39,5 +46,11 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
 }
 
 export function setAuthCookie(token: string): string {
-  return `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`;
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${secure}`;
+}
+
+export function clearAuthCookie(): string {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict${secure}`;
 }

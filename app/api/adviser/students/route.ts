@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import { students, users, workflows, advisers } from '@/lib/dummy-data';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isUuid } from '@/lib/supabase-mappers';
 
 // ============================================
 // RESPONSE TYPE INTERFACES
@@ -34,56 +35,82 @@ export async function GET(req: NextRequest) {
     req,
     async (_req, auth) => {
       try {
-        // Find the adviser record for the current user
-        const adviser = advisers.find((a) => a.userId === auth.userId);
-
-        // If user is an adviser but has no adviser profile, return empty
-        if (auth.role === 'adviser' && !adviser) {
+        if (!isUuid(auth.userId)) {
           return NextResponse.json({
             students: [],
-            summary: {
-              totalAdvisees: 0,
-              onTrackCount: 0,
-              needsAttentionCount: 0,
-            },
+            summary: { totalAdvisees: 0, onTrackCount: 0, needsAttentionCount: 0 },
           } as AdviseesResponse);
         }
 
-        // Get relevant students based on role
-        let relevantStudents = students;
-        if (adviser) {
-          // If user is an adviser, filter to only their advisees
-          relevantStudents = students.filter((s) => s.adviserId === adviser._id);
-        } else if (auth.role === 'adviser') {
-          // Fallback for adviser role without profile
-          return NextResponse.json({
-            students: [],
-            summary: {
-              totalAdvisees: 0,
-              onTrackCount: 0,
-              needsAttentionCount: 0,
-            },
-          } as AdviseesResponse);
+        let studentsQuery = supabaseAdmin
+          .from('students')
+          .select('id, user_id, program, advisers:adviser_id ( id ), users:user_id ( first_name, last_name )')
+          .order('created_at', { ascending: false });
+
+        if (auth.role === 'adviser') {
+          const { data: adviser } = await supabaseAdmin
+            .from('advisers')
+            .select('id')
+            .eq('user_id', auth.userId)
+            .maybeSingle();
+
+          if (!adviser) {
+            return NextResponse.json({
+              students: [],
+              summary: { totalAdvisees: 0, onTrackCount: 0, needsAttentionCount: 0 },
+            } as AdviseesResponse);
+          }
+          studentsQuery = studentsQuery.eq('adviser_id', adviser.id);
         }
-        // For coordinator and admin, return all students
 
-        const adviseesList: AdviseeItem[] = relevantStudents.map((student) => {
-          const user = users.find((u) => u._id === student.userId);
-          const workflow = workflows.find((w) => w.studentId === student._id);
+        const { data: studentsRows, error: studentsError } = await studentsQuery;
+        if (studentsError) {
+          return NextResponse.json({ error: studentsError.message }, { status: 500 });
+        }
 
-          // Determine status based on overdue milestones
+        const studentIds = (studentsRows ?? []).map((s) => s.id);
+        const { data: workflows } = studentIds.length
+          ? await supabaseAdmin
+              .from('workflows')
+              .select('id, student_id, current_stage')
+              .in('student_id', studentIds)
+          : { data: [] as Array<{ id: string; student_id: string; current_stage: string }> };
+
+        const workflowByStudent = new Map((workflows ?? []).map((w) => [w.student_id, w]));
+        const workflowIds = (workflows ?? []).map((w) => w.id);
+        const { data: stages } = workflowIds.length
+          ? await supabaseAdmin
+              .from('workflow_stages')
+              .select('workflow_id, status, due_date')
+              .in('workflow_id', workflowIds)
+          : { data: [] as Array<{ workflow_id: string; status: string; due_date: string | null }> };
+        const stagesByWorkflow = new Map<string, Array<{ status: string; due_date: string | null }>>();
+        (stages ?? []).forEach((s) => {
+          const arr = stagesByWorkflow.get(s.workflow_id) ?? [];
+          arr.push({ status: s.status, due_date: s.due_date });
+          stagesByWorkflow.set(s.workflow_id, arr);
+        });
+
+        const adviseesList: AdviseeItem[] = (studentsRows ?? []).map((student) => {
+          const workflow = workflowByStudent.get(student.id);
           const now = new Date();
-          const hasOverdue = workflow?.stages.some(
-            (s: any) => s.status !== 'approved' && s.dueDate && new Date(s.dueDate) < now
-          );
+          const hasOverdue =
+            (stagesByWorkflow.get(workflow?.id || '') ?? []).some(
+              (s) => s.status !== 'approved' && s.due_date && new Date(s.due_date) < now
+            );
+          const userRel = student.users as
+            | { first_name: string; last_name: string }
+            | Array<{ first_name: string; last_name: string }>
+            | null;
+          const user = Array.isArray(userRel) ? userRel[0] ?? null : userRel;
 
           return {
-            _id: student._id,
+            _id: student.id,
             name: user
-              ? `${user.profile.firstName} ${user.profile.lastName}`
+              ? `${user.first_name} ${user.last_name}`
               : 'Unknown',
             program: student.program,
-            nextMilestone: workflow?.currentStage || 'Not started',
+            nextMilestone: workflow?.current_stage || 'Not started',
             status: hasOverdue ? 'needs-attention' : 'on-track',
           };
         });

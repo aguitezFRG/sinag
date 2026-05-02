@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useAuth, UserRole } from '@/app/hooks/useAuth';
+import { useAuth } from '@/app/hooks/useAuth';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2, GraduationCap, CheckCircle, X } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, CheckCircle, X } from 'lucide-react';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -20,10 +20,8 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState<UserRole>('student');
   const [studentNumber, setStudentNumber] = useState('');
   const [program, setProgram] = useState('');
-  const [department, setDepartment] = useState('');
   const { register, loading, error } = useAuth();
   const router = useRouter();
 
@@ -62,14 +60,10 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
         password,
         firstName,
         lastName,
-        role,
+        role: 'student',
       };
-      if (role === 'student') {
-        payload.studentNumber = studentNumber;
-        payload.program = program;
-      } else if (role === 'adviser') {
-        payload.department = department;
-      }
+      payload.studentNumber = studentNumber;
+      payload.program = program;
       const user = await register(payload);
       router.push(`/${user.role}`);
     } catch {
@@ -206,86 +200,40 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
               </div>
             </div>
 
-            {/* Role Selection */}
-            <div>
-              <label htmlFor="register-role" className="block text-sm font-semibold text-gray-700 mb-2">
-                Role
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <GraduationCap className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  id="register-role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0C0B5D] focus:border-transparent text-sm transition-colors appearance-none bg-white"
-                >
-                  <option value="student">Graduate Student</option>
-                  <option value="adviser">Faculty Adviser</option>
-                  <option value="coordinator">Program Coordinator</option>
-                  <option value="admin">Administrator</option>
-                </select>
-              </div>
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
+              Self-registration is for graduate students only. Adviser, coordinator, and admin
+              accounts are created by system administrators.
             </div>
-
-            {/* Student-specific fields */}
-            {role === 'student' && (
-              <>
-                <div>
-                  <label htmlFor="register-studentNumber" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Student Number
-                  </label>
-                  <input
-                    id="register-studentNumber"
-                    type="text"
-                    value={studentNumber}
-                    onChange={(e) => setStudentNumber(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0C0B5D] focus:border-transparent text-sm transition-colors"
-                    placeholder="e.g., 2024-12345"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="register-program" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Graduate Program
-                  </label>
-                  <select
-                    id="register-program"
-                    value={program}
-                    onChange={(e) => setProgram(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0C0B5D] focus:border-transparent text-sm transition-colors appearance-none bg-white"
-                  >
-                    <option value="">Select your program</option>
-                    <option value="M.S. in Environmental Science">M.S. in Environmental Science</option>
-                    <option value="Ph.D. in Environmental Science">Ph.D. in Environmental Science</option>
-                    <option value="Ph.D. in Environmental Diplomacy and Negotiations">Ph.D. in Environmental Diplomacy and Negotiations</option>
-                    <option value="PM-TMEM">Professional Masters in Tropical Marine Ecosystems Management</option>
-                  </select>
-                </div>
-              </>
-            )}
-
-            {/* Adviser-specific fields */}
-            {role === 'adviser' && (
-              <div>
-                <label htmlFor="register-department" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Department
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Building2 className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="register-department"
-                    type="text"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0C0B5D] focus:border-transparent text-sm transition-colors"
-                    placeholder="e.g., SESAM"
-                  />
-                </div>
-              </div>
-            )}
+            <div>
+              <label htmlFor="register-studentNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                Student Number
+              </label>
+              <input
+                id="register-studentNumber"
+                type="text"
+                value={studentNumber}
+                onChange={(e) => setStudentNumber(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0C0B5D] focus:border-transparent text-sm transition-colors"
+                placeholder="e.g., 2024-12345"
+              />
+            </div>
+            <div>
+              <label htmlFor="register-program" className="block text-sm font-semibold text-gray-700 mb-2">
+                Graduate Program
+              </label>
+              <select
+                id="register-program"
+                value={program}
+                onChange={(e) => setProgram(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0C0B5D] focus:border-transparent text-sm transition-colors appearance-none bg-white"
+              >
+                <option value="">Select your program</option>
+                <option value="M.S. in Environmental Science">M.S. in Environmental Science</option>
+                <option value="Ph.D. in Environmental Science">Ph.D. in Environmental Science</option>
+                <option value="Ph.D. in Environmental Diplomacy and Negotiations">Ph.D. in Environmental Diplomacy and Negotiations</option>
+                <option value="PM-TMEM">Professional Masters in Tropical Marine Ecosystems Management</option>
+              </select>
+            </div>
 
             {/* Password */}
             <div>

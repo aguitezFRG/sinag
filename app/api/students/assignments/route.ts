@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import { students, users, advisers, workflows } from '@/lib/dummy-data';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ============================================
 // RESPONSE TYPE INTERFACES
@@ -58,40 +58,88 @@ export async function GET(req: NextRequest) {
         const unassignedOnly = url.searchParams.get('unassigned') === 'true';
         const programFilter = url.searchParams.get('program');
 
-        // Build student list with assignment info
-        let studentList: StudentAssignment[] = students.map((student) => {
-          const user = users.find((u) => u._id === student.userId);
-          const adviser = student.adviserId
-            ? advisers.find((a) => a._id === student.adviserId)
-            : null;
-          const adviserUser = adviser
-            ? users.find((u) => u._id === adviser.userId)
-            : null;
-          const workflow = workflows.find(
-            (w) => w.studentId === student._id
-          );
+        const { data: studentsRows, error } = await supabaseAdmin
+          .from('students')
+          .select(
+            `
+            id,
+            user_id,
+            student_number,
+            program,
+            enrollment_status,
+            thesis_title,
+            adviser_id,
+            start_date,
+            expected_completion_date,
+            users:user_id ( email, first_name, last_name ),
+            advisers:adviser_id ( id, department, user_id, users:user_id ( first_name, last_name ) )
+          `
+          )
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        const studentIds = (studentsRows ?? []).map((s) => s.id);
+        const { data: workflows } = studentIds.length
+          ? await supabaseAdmin
+              .from('workflows')
+              .select('student_id, status, current_stage')
+              .in('student_id', studentIds)
+          : { data: [] as Array<{ student_id: string; status: string; current_stage: string }> };
+        const workflowByStudent = new Map((workflows ?? []).map((w) => [w.student_id, w]));
+
+        let studentList: StudentAssignment[] = (studentsRows ?? []).map((student) => {
+          const userRel = student.users as
+            | { email: string; first_name: string; last_name: string }
+            | Array<{ email: string; first_name: string; last_name: string }>
+            | null;
+          const user = Array.isArray(userRel) ? userRel[0] ?? null : userRel;
+          const adviserRel = student.advisers as
+            | {
+                id: string;
+                department: string;
+                users:
+                  | { first_name: string; last_name: string }
+                  | Array<{ first_name: string; last_name: string }>
+                  | null;
+              }
+            | Array<{
+                id: string;
+                department: string;
+                users:
+                  | { first_name: string; last_name: string }
+                  | Array<{ first_name: string; last_name: string }>
+                  | null;
+              }>
+            | null;
+          const adviser = Array.isArray(adviserRel) ? adviserRel[0] ?? null : adviserRel;
+          const adviserUserRel = adviser?.users ?? null;
+          const adviserUser = Array.isArray(adviserUserRel) ? adviserUserRel[0] ?? null : adviserUserRel;
+          const workflow = workflowByStudent.get(student.id);
 
           return {
-            studentId: student._id,
-            userId: student.userId,
+            studentId: student.id,
+            userId: student.user_id,
             studentName: user
-              ? `${user.profile.firstName} ${user.profile.lastName}`
+              ? `${user.first_name} ${user.last_name}`
               : 'Unknown',
             email: user?.email || '',
-            studentNumber: student.studentNumber,
+            studentNumber: student.student_number,
             program: student.program,
-            enrollmentStatus: student.enrollmentStatus,
-            thesisTitle: student.thesisTitle || null,
-            adviserId: student.adviserId,
+            enrollmentStatus: student.enrollment_status,
+            thesisTitle: student.thesis_title || null,
+            adviserId: student.adviser_id,
             adviserName: adviserUser
-              ? `Dr. ${adviserUser.profile.firstName} ${adviserUser.profile.lastName}`
+              ? `Dr. ${adviserUser.first_name} ${adviserUser.last_name}`
               : null,
             adviserDepartment: adviser?.department || null,
-            currentStage: workflow?.currentStage || null,
+            currentStage: workflow?.current_stage || null,
             workflowStatus: workflow?.status || null,
-            isAssigned: !!student.adviserId,
-            startDate: student.startDate,
-            expectedCompletionDate: student.expectedCompletionDate || null,
+            isAssigned: !!student.adviser_id,
+            startDate: student.start_date,
+            expectedCompletionDate: student.expected_completion_date || null,
           };
         });
 

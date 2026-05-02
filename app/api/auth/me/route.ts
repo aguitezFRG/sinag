@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { users } from '@/lib/dummy-data';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { toLegacyUser, UserRow } from '@/lib/supabase-mappers';
 
 export async function GET(req: NextRequest) {
   // 1. Read the token cookie from the request
@@ -19,14 +20,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
 
-  // 5. Find the user in dummy-data.ts by payload.userId
-  const user = users.find((u) => u._id === payload.userId);
+  const { data: user, error } = await supabaseAdmin
+    .from('users')
+    .select('id, email, role, first_name, last_name, avatar, is_active, created_at, last_login_at')
+    .eq('id', payload.userId)
+    .maybeSingle();
 
-  // 6. If user not found, return 404
-  if (!user) {
+  if (error || !user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  // 7. Return the user object (without passwordHash - not present in dummy data)
-  return NextResponse.json({ user });
+  return NextResponse.json({ user: toLegacyUser(user as UserRow) });
 }
