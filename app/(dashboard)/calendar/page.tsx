@@ -563,7 +563,7 @@ export default function CalendarPage() {
     }
 
     return (
-      <div className="flex-1 overflow-auto">
+      <div className="w-full">
         {/* Day headers */}
         <div className="grid grid-cols-7 border-b border-gray-200">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -620,7 +620,7 @@ export default function CalendarPage() {
     }
 
     return (
-      <div className="flex-1 overflow-auto">
+      <div className="w-full">
         <div className="flex min-h-[500px]">
           {weekDays}
         </div>
@@ -636,7 +636,7 @@ export default function CalendarPage() {
     const isToday = isSameDay(currentDate, new Date());
 
     return (
-      <div className="flex-1 overflow-auto">
+      <div className="w-full">
         <div className={`p-4 text-center border-b border-gray-200 ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
           <h3 className={`text-xl font-bold ${isToday ? 'text-blue-700' : 'text-gray-900'}`}>
             {formatDate(currentDate.toISOString())}
@@ -695,7 +695,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white p-4 sm:p-6">
+    <div className="min-h-full flex flex-col bg-white p-4 sm:p-6">
       {/* Header */}
       <div className="p-4 sm:p-6 border-b border-gray-200 bg-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -772,7 +772,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Main content - Calendar + Sidebar */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-col lg:flex-row">
         {/* Calendar area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Filters bar */}
@@ -811,7 +811,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Upcoming events sidebar */}
-        <div className="hidden lg:block w-80 border-l border-gray-200 bg-gray-50 overflow-y-auto">
+        <div className="hidden lg:block w-80 border-l border-gray-200 bg-gray-50">
           <div className="p-4 border-b border-gray-200 bg-white">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
               <Clock className="w-5 h-5 text-[#0C0B5D]" />
