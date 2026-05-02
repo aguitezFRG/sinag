@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import {
-  students,
-  advisers,
-  users,
-  workflows,
-  documents,
-} from '@/lib/dummy-data';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isUuid } from '@/lib/supabase-mappers';
 
 // ============================================
 // RESPONSE TYPE INTERFACES
@@ -76,9 +71,15 @@ export async function GET(req: NextRequest) {
     req,
     async (_req, auth) => {
       try {
-        // Find the adviser record for the current user
-        const adviser = advisers.find((a) => a.userId === auth.userId);
+        if (!isUuid(auth.userId)) {
+          return NextResponse.json({ error: 'Adviser profile not found' }, { status: 404 });
+        }
 
+        const { data: adviser } = await supabaseAdmin
+          .from('advisers')
+          .select('id')
+          .eq('user_id', auth.userId)
+          .maybeSingle();
         if (!adviser) {
           return NextResponse.json(
             { error: 'Adviser profile not found' },
@@ -86,40 +87,75 @@ export async function GET(req: NextRequest) {
           );
         }
 
-        const adviserId = adviser._id;
+        const adviserId = adviser.id;
 
         // Parse query parameters
         const url = new URL(req.url);
         const statusFilter = url.searchParams.get('status');
         const priorityFilter = url.searchParams.get('priority');
 
-        // Get all workflows for this adviser's students
-        const adviseeIds = students
-          .filter((s) => s.adviserId === adviserId)
-          .map((s) => s._id);
+        const { data: students } = await supabaseAdmin
+          .from('students')
+          .select('id, user_id, program, thesis_title')
+          .eq('adviser_id', adviserId);
+        const adviseeIds = (students ?? []).map((s) => s.id);
+        const userIds = (students ?? []).map((s) => s.user_id);
 
-        const adviseeWorkflows = workflows.filter((w) =>
-          adviseeIds.includes(w.studentId)
-        );
+        const [{ data: workflows }, { data: stages }, { data: users }] =
+          await Promise.all([
+            adviseeIds.length
+              ? supabaseAdmin
+                  .from('workflows')
+                  .select('id, student_id, updated_at')
+                  .in('student_id', adviseeIds)
+              : Promise.resolve({ data: [] }),
+            adviseeIds.length
+              ? supabaseAdmin
+                  .from('workflows')
+                  .select('id, student_id, workflow_stages ( id, name, stage_order, status, due_date, completed_at )')
+                  .in('student_id', adviseeIds)
+              : Promise.resolve({ data: [] }),
+            userIds.length
+              ? supabaseAdmin
+                  .from('users')
+                  .select('id, first_name, last_name')
+                  .in('id', userIds)
+              : Promise.resolve({ data: [] }),
+          ]);
 
         // Collect all pending reviews from workflows
         let pendingReviews: PendingReviewItem[] = [];
 
-        for (const workflow of adviseeWorkflows) {
-          const student = students.find((s) => s._id === workflow.studentId);
+        const studentById = new Map((students ?? []).map((s) => [s.id, s]));
+        const userById = new Map((users ?? []).map((u) => [u.id, u]));
+        const workflowRows = workflows ?? [];
+
+        for (const workflow of workflowRows) {
+          const student = studentById.get(workflow.student_id);
           if (!student) continue;
 
-          const studentUser = users.find((u) => u._id === student.userId);
+          const studentUser = userById.get(student.user_id);
+          const stagesEntry = (stages ?? []).find(
+            (w: { id: string; workflow_stages: unknown[] }) => w.id === workflow.id
+          );
+          const workflowStages = (stagesEntry?.workflow_stages ?? []) as Array<{
+            id: string;
+            name: string;
+            stage_order: number;
+            status: string;
+            due_date: string | null;
+            completed_at: string | null;
+          }>;
 
           // Find stages that need review (submitted or in_progress)
-          const reviewableStages = workflow.stages.filter(
-            (s: any) => s.status === 'submitted' || s.status === 'in_progress'
+          const reviewableStages = workflowStages.filter(
+            (s) => s.status === 'submitted' || s.status === 'in_progress'
           );
 
           for (const stage of reviewableStages) {
             // Calculate priority based on due date and status
             const now = new Date();
-            const dueDate = stage.dueDate ? new Date(stage.dueDate) : null;
+            const dueDate = stage.due_date ? new Date(stage.due_date) : null;
             const isOverdue = dueDate ? dueDate < now : false;
             const daysOverdue = isOverdue && dueDate
               ? Math.floor(
@@ -142,44 +178,32 @@ export async function GET(req: NextRequest) {
             }
 
             // Get attached documents for this stage
-            const attachedDocs = (stage.documents || [])
-              .map((docId: string) => {
-                const doc = documents.find((d) => d._id === docId);
-                return doc
-                  ? {
-                      documentId: doc._id,
-                      title: doc.title,
-                      type: doc.type,
-                      uploadedAt: doc.createdAt,
-                    }
-                  : null;
-              })
-              .filter(Boolean) as PendingReviewItem['attachedDocuments'];
+            const attachedDocs: PendingReviewItem['attachedDocuments'] = [];
 
             // Calculate workflow progress
-            const completedStages = workflow.stages.filter(
-              (s: any) => s.status === 'approved'
+            const completedStages = workflowStages.filter(
+              (s) => s.status === 'approved'
             ).length;
-            const totalStages = workflow.stages.length;
+            const totalStages = workflowStages.length || 1;
 
             pendingReviews.push({
-              reviewId: `${workflow._id}-${stage.order}`,
-              workflowId: workflow._id,
-              stageId: stage.order,
+              reviewId: `${workflow.id}-${stage.stage_order}`,
+              workflowId: workflow.id,
+              stageId: stage.stage_order,
               stageName: stage.name,
-              stageOrder: stage.order,
+              stageOrder: stage.stage_order,
               status: stage.status as 'submitted' | 'in_progress',
-              submittedAt: stage.completedAt || workflow.updatedAt,
-              dueDate: stage.dueDate || null,
+              submittedAt: stage.completed_at || workflow.updated_at,
+              dueDate: stage.due_date || null,
               isOverdue,
               daysOverdue,
               priority,
-              studentId: student._id,
+              studentId: student.id,
               studentName: studentUser
-                ? `${studentUser.profile.firstName} ${studentUser.profile.lastName}`
+                ? `${studentUser.first_name} ${studentUser.last_name}`
                 : 'Unknown',
               studentProgram: student.program,
-              thesisTitle: student.thesisTitle || null,
+              thesisTitle: student.thesis_title || null,
               attachedDocuments: attachedDocs,
               workflowProgress: {
                 completedStages,

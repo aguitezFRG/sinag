@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
-import { students, advisers, users, aiQueries } from '@/lib/dummy-data';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { isUuid } from '@/lib/supabase-mappers';
 
 // ============================================
 // RESPONSE TYPE INTERFACES
@@ -54,8 +55,14 @@ export async function GET(req: NextRequest) {
     req,
     async (_req, auth) => {
       try {
-        // Find the adviser record for the current user
-        const adviser = advisers.find((a) => a.userId === auth.userId);
+        if (!isUuid(auth.userId)) {
+          return NextResponse.json({ error: 'Adviser profile not found' }, { status: 404 });
+        }
+        const { data: adviser } = await supabaseAdmin
+          .from('advisers')
+          .select('id')
+          .eq('user_id', auth.userId)
+          .maybeSingle();
 
         if (!adviser) {
           return NextResponse.json(
@@ -64,7 +71,7 @@ export async function GET(req: NextRequest) {
           );
         }
 
-        const adviserId = adviser._id;
+        const adviserId = adviser.id;
 
         // Parse query parameters
         const url = new URL(req.url);
@@ -76,81 +83,94 @@ export async function GET(req: NextRequest) {
         const studentIdFilter = url.searchParams.get('studentId');
         const flaggedOnly = url.searchParams.get('flagged') === 'true';
 
-        // Get all advisees for this adviser
-        const advisees = students.filter((s) => s.adviserId === adviserId);
-        const adviseeUserIds = advisees.map((s) => s.userId);
+        const { data: advisees } = await supabaseAdmin
+          .from('students')
+          .select('id, user_id, program')
+          .eq('adviser_id', adviserId);
+        const adviseeUserIds = (advisees ?? []).map((s) => s.user_id);
+        const studentByUserId = new Map((advisees ?? []).map((s) => [s.user_id, s]));
 
-        // Filter AI queries by advisee userIds
-        let filteredQueries = aiQueries.filter((q) =>
-          adviseeUserIds.includes(q.userId)
-        );
+        let query = supabaseAdmin
+          .from('ai_queries')
+          .select(
+            `
+            id, user_id, session_id, query, response, intent, is_flagged, created_at,
+            ai_query_sources ( title, source_type, url )
+          `
+          )
+          .in('user_id', adviseeUserIds)
+          .order('created_at', { ascending: false });
 
         // Apply additional filters
         if (studentIdFilter) {
-          const targetStudent = advisees.find(
-            (s) => s._id === studentIdFilter
-          );
+          const targetStudent = (advisees ?? []).find((s) => s.id === studentIdFilter);
           if (targetStudent) {
-            filteredQueries = filteredQueries.filter(
-              (q) => q.userId === targetStudent.userId
-            );
+            query = query.eq('user_id', targetStudent.user_id);
           }
         }
 
         if (flaggedOnly) {
-          filteredQueries = filteredQueries.filter((q) => q.isFlagged);
+          query = query.eq('is_flagged', true);
         }
 
-        // Sort by createdAt descending (most recent first)
-        filteredQueries.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        const { data: filteredQueries, error } = await query;
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+        const userIds = Array.from(new Set((filteredQueries ?? []).map((q) => q.user_id)));
+        const { data: users } = userIds.length
+          ? await supabaseAdmin.from('users').select('id, first_name, last_name').in('id', userIds)
+          : { data: [] as Array<{ id: string; first_name: string; last_name: string }> };
+        const userById = new Map((users ?? []).map((u) => [u.id, u]));
 
         // Calculate total before pagination
-        const totalCount = filteredQueries.length;
+        const totalCount = (filteredQueries ?? []).length;
 
         // Apply pagination
-        const paginatedQueries = filteredQueries.slice(offset, offset + limit);
+        const paginatedQueries = (filteredQueries ?? []).slice(offset, offset + limit);
 
         // Map to response format
         const consultations: ConsultationItem[] = paginatedQueries.map(
           (q) => {
-            const student = students.find((s) => s.userId === q.userId);
-            const studentUser = student
-              ? users.find((u) => u._id === student.userId)
-              : null;
+            const student = studentByUserId.get(q.user_id);
+            const studentUser = student ? userById.get(student.user_id) : null;
 
             return {
-              consultationId: q._id,
-              studentId: student?._id || '',
+              consultationId: q.id,
+              studentId: student?.id || '',
               studentName: studentUser
-                ? `${studentUser.profile.firstName} ${studentUser.profile.lastName}`
+                ? `${studentUser.first_name} ${studentUser.last_name}`
                 : 'Unknown',
               studentProgram: student?.program || 'Unknown',
               studentInitials: studentUser
-                ? `${studentUser.profile.firstName[0]}${studentUser.profile.lastName[0]}`.toUpperCase()
+                ? `${studentUser.first_name[0]}${studentUser.last_name[0]}`.toUpperCase()
                 : '??',
               query: q.query,
               response: q.response,
               intent: q.intent,
-              sources: q.sources || [],
-              isFlagged: q.isFlagged,
-              createdAt: q.createdAt,
-              sessionId: q.sessionId,
+              sources: (q.ai_query_sources ?? []).map(
+                (s: { title: string | null; source_type: string | null; url: string | null }) => ({
+                  title: s.title ?? '',
+                  type: s.source_type ?? '',
+                  url: s.url ?? undefined,
+                })
+              ),
+              isFlagged: q.is_flagged,
+              createdAt: q.created_at,
+              sessionId: q.session_id,
             };
           }
         );
 
         // Calculate summary statistics
         const uniqueStudents = new Set(
-          filteredQueries.map((q) => q.userId)
+          (filteredQueries ?? []).map((q) => q.user_id)
         ).size;
-        const flaggedCount = filteredQueries.filter((q) => q.isFlagged).length;
+        const flaggedCount = (filteredQueries ?? []).filter((q) => q.is_flagged).length;
 
         // Calculate intents breakdown
         const intentsBreakdown: Record<string, number> = {};
-        filteredQueries.forEach((q) => {
+        (filteredQueries ?? []).forEach((q) => {
           intentsBreakdown[q.intent] = (intentsBreakdown[q.intent] || 0) + 1;
         });
 
