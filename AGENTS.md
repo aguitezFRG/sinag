@@ -143,11 +143,46 @@ Agent definitions live in `.agents/{role}/`. Each directory contains:
 
 ---
 
+## Repository Runtime Context
+
+- App source is in `sinag/`; run project commands from that directory
+- Dev URL: `http://localhost:3000`
+- Scripts:
+  - `npm run dev` — start dev server (Turbopack)
+  - `npm run build` — production build
+  - `npm run lint` — ESLint
+  - `npm run start` — serve production build
+- Current state: no automated test suite is configured yet
+
+## Current Implementation Notes
+
+- Database connection is implemented in `lib/db.ts` (cached Mongoose connection)
+- Authentication uses JWT in httpOnly cookies via `jose`; passwords are hashed with `bcryptjs` (12 rounds)
+- AI integration is currently a local mock in `lib/ai-service.ts` using keyword scoring and `lib/dummy-data.ts` (no live OpenAI calls yet)
+- Protected API routes should use `withAuth` from `lib/middleware.ts` with optional role whitelists
+
+## Environment Variables
+
+Required in `sinag/.env.local`:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+
+Optional (for planned integrations):
+
+- `OPENAI_API_KEY`
+- `CLOUDINARY_URL`
+- `SENDGRID_API_KEY`
+
+---
+
 ## Reference Materials
 
 - `.sinag-instructions/Project_SINAG_AI_Implementation_Plan-v2.pdf` — Full implementation plan with agent prompts and timeline
 - `.sinag-instructions/AI Based Program and JESAM Consultation.pdf` — Complete project specification: stakeholders, modules, tech stack, NFRs
 - `.sinag-instructions/references/` — Academic policy documents (thesis formats, university codes, research guides)
+- `sinag/docs/DESIGN.md` — DB schema, API spec, component architecture, AI pipeline, security design
+- `sinag/docs/SRS.md` — software requirements specification
 - `node_modules/next/dist/docs/` — Current Next.js App Router documentation ( heed deprecation notices )
 - [Next.js Documentation](https://nextjs.org/docs) — Official Next.js docs
 - [Figma Prototype](https://pen-ignite-95990799.figma.site) — High-fidelity UI/UX design reference
