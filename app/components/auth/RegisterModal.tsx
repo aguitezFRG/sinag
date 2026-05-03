@@ -92,26 +92,33 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
     >
       <div className="w-full max-w-lg flex flex-col rounded-2xl shadow-xl overflow-hidden" style={{ maxHeight: '90vh' }}>
         {/* Fixed Header */}
-        <div className="bg-white px-8 pt-6 pb-5 border-b border-gray-200 flex-shrink-0 relative">
+        <div className="bg-[#0C0B5D] px-8 pt-6 pb-5 border-b border-[#0C0B5D] flex-shrink-0 relative text-white">
           <button
             onClick={onClose}
             disabled={loading}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-4">
-            <Image
-              src="/images/favicon.png"
-              alt="SINAG logo"
-              width={48}
-              height={48}
-              className="rounded-xl flex-shrink-0"
-            />
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow ring-2 ring-white/30 flex-shrink-0">
+              <Image
+                src="/images/sesam-logo.png"
+                alt="SESAM seal"
+                width={40}
+                height={40}
+                className="object-contain"
+              />
+            </span>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Join SINAG</h1>
-              <p className="text-xs text-gray-500">AI-Powered Graduate Advising Platform</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                A SESAM Initiative · UPLB
+              </p>
+              <h1 className="text-xl font-bold">Join SINAG</h1>
+              <p className="text-xs text-white/70">
+                Get cited answers to SESAM workflow & JESAM research questions.
+              </p>
             </div>
           </div>
         </div>

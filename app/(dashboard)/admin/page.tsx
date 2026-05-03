@@ -83,9 +83,21 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
-        <p className="text-sm text-gray-500">System administration and oversight</p>
+      {/* Brand header banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#0C0B5D] p-6 text-white shadow-lg">
+        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-white/10 to-transparent" />
+        <div className="relative flex items-start gap-4">
+          <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-white shadow ring-2 ring-white/20">
+            <img src="/images/sesam-logo.png" alt="SESAM seal" className="h-11 w-11 object-contain" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">A SESAM Initiative · UPLB</p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight">Admin Dashboard</h2>
+            <p className="mt-1 text-sm text-white/80">
+              System administration and oversight for SINAG — the SESAM-grounded graduate advising platform.
+            </p>
+          </div>
+        </div>
       </div>
 
       {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -108,7 +120,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Recent Audit Logs</h3>
-            <Link href="/admin/audit-logs" className="text-sm font-medium text-blue-800 hover:underline">
+            <Link href="/admin/audit-logs" className="text-sm font-medium text-[#0C0B5D] hover:underline">
               View all
             </Link>
           </div>
@@ -156,7 +168,7 @@ export default function AdminDashboard() {
           <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
           <div className="mt-4 space-y-2">
             <Link href="/admin/users" className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
-              <UsersIcon className="h-5 w-5 text-blue-800" />
+              <UsersIcon className="h-5 w-5 text-[#0C0B5D]" />
               Manage Users
             </Link>
             <Link href="/admin/audit-logs" className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium text-gray-700 hover:bg-gray-50">

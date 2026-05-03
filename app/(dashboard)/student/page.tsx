@@ -48,6 +48,23 @@ export default function StudentDashboard() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* SESAM brand banner */}
+      <div className="mb-6 relative overflow-hidden rounded-2xl bg-[#0C0B5D] p-5 sm:p-6 text-white shadow-lg">
+        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-white/10 to-transparent" />
+        <div className="relative flex items-start gap-4">
+          <span className="hidden sm:flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-white shadow ring-2 ring-white/20">
+            <img src="/images/sesam-logo.png" alt="SESAM seal" className="h-11 w-11 object-contain" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">A SESAM Initiative · UPLB</p>
+            <h2 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight">Your SESAM Graduate Workspace</h2>
+            <p className="mt-1 text-sm text-white/80 max-w-2xl">
+              Track milestones, manage documents, and ask SINAG AI for cited guidance from the SESAM handbook and JESAM research archive.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Welcome Section */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">

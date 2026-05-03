@@ -123,7 +123,7 @@ export default function AdviserDashboard() {
         </div>
         <Link
           href="/adviser/ai-chat"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-5 py-3 text-sm font-medium text-white hover:bg-[#162b45]"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0C0B5D] px-5 py-3 text-sm font-medium text-white hover:bg-[#0a0949]"
         >
           <SparklesIcon className="h-4 w-4" />
           Ask AI a Question
@@ -200,7 +200,7 @@ export default function AdviserDashboard() {
                     className="flex items-center justify-between rounded-lg border border-gray-100 p-4 hover:bg-gray-50"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e3a5f] text-sm font-bold text-white">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0C0B5D] text-sm font-bold text-white">
                         {student.name
                           .split(' ')
                           .map((n) => n[0])
@@ -235,12 +235,12 @@ export default function AdviserDashboard() {
           <div className="mt-6 rounded-xl bg-white p-6 shadow-card">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-                <SparklesIcon className="h-5 w-5 text-[#1e3a5f]" />
+                <SparklesIcon className="h-5 w-5 text-[#0C0B5D]" />
                 Recent AI Consultations
               </h2>
               <Link
                 href="#"
-                className="flex items-center gap-1 text-sm font-medium text-[#1e3a5f] hover:underline"
+                className="flex items-center gap-1 text-sm font-medium text-[#0C0B5D] hover:underline"
               >
                 View All
                 <ChevronRightIcon className="h-4 w-4" />
@@ -261,16 +261,16 @@ export default function AdviserDashboard() {
                 {recentConsultations.map((consultation) => (
                   <div
                     key={consultation.consultationId}
-                    className="flex items-start gap-3 rounded-lg border-l-4 border-[#1e3a5f] bg-gray-50 p-4"
+                    className="flex items-start gap-3 rounded-lg border-l-4 border-[#0C0B5D] bg-gray-50 p-4"
                   >
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <p className="font-medium text-[#1e3a5f]">
+                        <p className="font-medium text-[#0C0B5D]">
                           Re: {consultation.studentName}
                         </p>
                         <Link
                           href="#"
-                          className="text-sm font-medium text-[#1e3a5f] hover:underline"
+                          className="text-sm font-medium text-[#0C0B5D] hover:underline"
                         >
                           Continue
                         </Link>
@@ -342,7 +342,7 @@ export default function AdviserDashboard() {
                     <div className="mt-3 flex gap-2">
                       <Link
                         href="/adviser/reviews"
-                        className="flex-1 rounded-lg bg-[#1e3a5f] px-3 py-2 text-center text-sm font-medium text-white hover:bg-[#162b45]"
+                        className="flex-1 rounded-lg bg-[#0C0B5D] px-3 py-2 text-center text-sm font-medium text-white hover:bg-[#0a0949]"
                       >
                         Review
                       </Link>

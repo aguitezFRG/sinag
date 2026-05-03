@@ -71,11 +71,12 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
         {/* SINAG Logo */}
         <div className="p-4 sm:p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex-shrink-0 overflow-hidden bg-white relative">
-              <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="56px" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex-shrink-0 overflow-hidden bg-white relative ring-2 ring-white/20">
+              <Image src="/images/sesam-logo.png" alt="SESAM seal" fill style={{ objectFit: 'contain' }} sizes="56px" />
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl text-white font-bold">SINAG</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl text-white font-bold leading-tight">SINAG</h1>
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-white/60">A SESAM Initiative</p>
             </div>
           </div>
         </div>
@@ -127,10 +128,13 @@ export default function Sidebar({ role, mobileOpen, onCloseMobile }: SidebarProp
             {/* SINAG Logo + Close Button */}
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white relative">
-                  <Image src="/images/favicon.png" alt="SINAG" fill style={{ objectFit: 'contain' }} sizes="48px" />
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-white relative ring-2 ring-white/20">
+                  <Image src="/images/sesam-logo.png" alt="SESAM seal" fill style={{ objectFit: 'contain' }} sizes="48px" />
                 </div>
-                <h1 className="text-lg text-white font-bold">SINAG</h1>
+                <div className="min-w-0">
+                  <h1 className="text-lg text-white font-bold leading-tight">SINAG</h1>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/60">A SESAM Initiative</p>
+                </div>
               </div>
               <button
                 onClick={onCloseMobile}

@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'sesam.uplb.edu.ph' },
+    ],
+  },
   async headers() {
     return [
       {

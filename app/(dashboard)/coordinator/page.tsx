@@ -179,7 +179,7 @@ export default function CoordinatorDashboard() {
                   <div className="flex-1">
                     <div className="h-8 rounded bg-gray-100">
                       <div
-                        className="h-8 rounded bg-[#1e3a5f]"
+                        className="h-8 rounded bg-[#0C0B5D]"
                         style={{
                           width: `${
                             (adviser.students /
@@ -210,7 +210,7 @@ export default function CoordinatorDashboard() {
       <div className="mb-8 rounded-xl bg-white p-6 shadow-card">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Adviser Assignments</h2>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162b45]">
+          <button className="inline-flex items-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-2 text-sm font-medium text-white hover:bg-[#0a0949]">
             <PlusIcon className="h-4 w-4" />
             Assign Adviser
           </button>
@@ -267,7 +267,7 @@ export default function CoordinatorDashboard() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <button className="font-medium text-[#1e3a5f] hover:underline">
+                      <button className="font-medium text-[#0C0B5D] hover:underline">
                         {student.unassigned ? 'Assign' : 'Reassign'}
                       </button>
                     </td>
@@ -321,15 +321,15 @@ export default function CoordinatorDashboard() {
             <option>PM-TMEM</option>
           </select>
           <div className="ml-auto flex gap-2">
-            <button className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162b45]">
+            <button className="inline-flex items-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-2 text-sm font-medium text-white hover:bg-[#0a0949]">
               <DocumentArrowDownIcon className="h-4 w-4" />
               Export CSV
             </button>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162b45]">
+            <button className="inline-flex items-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-2 text-sm font-medium text-white hover:bg-[#0a0949]">
               <DocumentArrowDownIcon className="h-4 w-4" />
               Export Excel
             </button>
-            <button className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162b45]">
+            <button className="inline-flex items-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-2 text-sm font-medium text-white hover:bg-[#0a0949]">
               <DocumentArrowDownIcon className="h-4 w-4" />
               Export PDF
             </button>
@@ -341,7 +341,7 @@ export default function CoordinatorDashboard() {
       <div className="rounded-xl bg-white p-6 shadow-card">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Program Announcements</h2>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#162b45]">
+          <button className="inline-flex items-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-2 text-sm font-medium text-white hover:bg-[#0a0949]">
             <PlusIcon className="h-4 w-4" />
             Create Announcement
           </button>

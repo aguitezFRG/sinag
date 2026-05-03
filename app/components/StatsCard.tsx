@@ -40,7 +40,7 @@ export default function StatsCard({
           )}
         </div>
         {icon && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-800">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0C0B5D]/10 text-[#0C0B5D]">
             {icon}
           </div>
         )}

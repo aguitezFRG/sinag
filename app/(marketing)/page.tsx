@@ -279,17 +279,39 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section id="home" className="relative bg-[#0C0B5D] text-white overflow-hidden min-h-screen">
-        {/* Background Image */}
+        {/* Background: Official SESAM building photograph from sesam.uplb.edu.ph */}
         <div className="absolute inset-0">
-          <div 
-            className="w-full h-full bg-gradient-to-br from-[#0C0B5D] via-[#1e3a5f] to-[#0C0B5D]"
-            style={{ filter: 'brightness(0.82)' }}
+          <Image
+            src="https://sesam.uplb.edu.ph/wp-content/uploads/2024/04/SESAM-building.png"
+            alt="UPLB School of Environmental Science and Management (SESAM) building"
+            fill
+            priority
+            unoptimized
+            sizes="100vw"
+            className="object-cover object-center"
+            style={{ filter: 'brightness(0.55) saturate(0.9)' }}
           />
-          {/* Gradient overlay */}
-          <div 
-            className="absolute inset-0" 
-            style={{ background: 'linear-gradient(to right, rgba(10,20,40,0.72), rgba(10,20,40,0.15))' }}
-          ></div>
+          {/* Primary brand veil — indigo dominant for strong, professional brand presence */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(100deg, rgba(12,11,93,0.96) 0%, rgba(12,11,93,0.88) 42%, rgba(12,11,93,0.62) 70%, rgba(12,11,93,0.48) 100%)',
+            }}
+          />
+          {/* Soft indigo radial highlight to add depth without noise */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(ellipse 70% 60% at 75% 40%, rgba(63,61,180,0.35) 0%, transparent 65%)',
+            }}
+          />
+          {/* Bottom fade to next section */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
+            style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,11,93,0.85))' }}
+          />
         </div>
 
         {/* Top gradient overlay for navbar */}
@@ -298,7 +320,7 @@ export default function LandingPage() {
             className="absolute top-0 left-0 right-0 pointer-events-none transition-opacity duration-300"
             style={{
               height: '140px',
-              background: 'linear-gradient(to bottom, rgba(15,23,42,0.65) 0%, rgba(15,23,42,0.35) 50%, transparent 100%)',
+              background: 'linear-gradient(to bottom, rgba(12,11,93,0.75) 0%, rgba(12,11,93,0.40) 50%, transparent 100%)',
               zIndex: 10
             }}
           ></div>
@@ -308,11 +330,29 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center w-full">
             {/* Left Column - Hero Content */}
             <div className="space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-tight" style={{ textShadow: '0 4px 24px rgba(0,0,0,0.55)' }}>
+              <div className="space-y-5">
+                {/* Academic eyebrow ribbon — explicit SESAM origin */}
+                <div className="inline-flex items-center gap-2.5 pl-2 pr-4 py-1.5 bg-white/[0.08] backdrop-blur-md border border-white/20 rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.15)]">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/95">
+                    <Building className="w-3.5 h-3.5 text-[#0C0B5D]" />
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/95">
+                    A SESAM Initiative · UPLB
+                  </span>
+                </div>
+
+                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight" style={{ textShadow: '0 4px 24px rgba(0,0,0,0.45)' }}>
                   SINAG
                 </h1>
-                <div className="h-1 w-32 bg-white"></div>
+                {/* Brand underline — clean white bar, single subtle accent */}
+                <div className="flex items-center gap-2">
+                  <div className="h-[3px] w-20 bg-white rounded-full"></div>
+                  <div className="h-[3px] w-2 bg-white/40 rounded-full"></div>
+                </div>
+                {/* SESAM lockup beneath the wordmark */}
+                <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-white/70">
+                  Built for the School of Environmental Science and Management
+                </p>
               </div>
 
               <div className="space-y-3">
@@ -495,7 +535,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-gray-200 transform hover:scale-105 transition-transform">
-              <div className="aspect-video bg-gradient-to-br from-[#0C0B5D] to-[#1e3a5f] flex items-center justify-center">
+              <div className="aspect-video bg-gradient-to-br from-[#0C0B5D] to-[#0C0B5D] flex items-center justify-center">
                 <div className="text-center text-white p-8">
                   <Building className="w-24 h-24 mx-auto mb-4" />
                   <p className="text-2xl font-bold">SESAM Building</p>
@@ -777,7 +817,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="relative rounded-2xl overflow-hidden shadow-xl group">
-              <div className="aspect-[4/3] bg-gradient-to-br from-[#0C0B5D] to-[#1e3a5f] flex items-center justify-center">
+              <div className="aspect-[4/3] bg-gradient-to-br from-[#0C0B5D] to-[#0C0B5D] flex items-center justify-center">
                 <Building className="w-20 h-20 text-white/50" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
@@ -817,7 +857,7 @@ export default function LandingPage() {
         {/* Background Image */}
         <div className="absolute inset-0">
           <div 
-            className="w-full h-full bg-gradient-to-br from-[#0C0B5D] via-[#1e3a5f] to-[#0C0B5D]"
+            className="w-full h-full bg-gradient-to-br from-[#0C0B5D] via-[#0C0B5D] to-[#0C0B5D]"
             style={{ filter: 'brightness(0.65)' }}
           />
         </div>

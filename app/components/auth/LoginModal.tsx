@@ -86,15 +86,22 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
         {/* SESAM Logo */}
         <div className="text-center mb-6">
-          <Image
-            src="/images/favicon.png"
-            alt="SINAG logo"
-            width={72}
-            height={72}
-            className="rounded-2xl mx-auto mb-4 shadow-lg"
-          />
-          <h1 className="text-2xl font-bold text-gray-900">Welcome to SINAG</h1>
-          <p className="text-sm text-gray-600 mt-1">AI-Powered Graduate Advising Platform</p>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg ring-2 ring-[#0C0B5D]/15">
+            <Image
+              src="/images/sesam-logo.png"
+              alt="SESAM seal"
+              width={64}
+              height={64}
+              className="object-contain"
+            />
+          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#0C0B5D]/70">
+            A SESAM Initiative · UPLB
+          </p>
+          <h1 className="mt-2 text-2xl font-bold text-gray-900">Welcome back to SINAG</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Sign in to access SESAM workflows, milestone tracking, and JESAM-grounded AI consultation.
+          </p>
         </div>
 
         {/* Login Card */}

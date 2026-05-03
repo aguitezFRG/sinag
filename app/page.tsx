@@ -27,6 +27,7 @@ export default function HomePage() {
   const router = useRouter();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
@@ -40,6 +41,13 @@ export default function HomePage() {
       setShowRegisterModal(true);
       setShowLoginModal(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   if (loading) {
@@ -60,41 +68,79 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="absolute left-0 right-0 top-0 z-50">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-12">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
-              <SparklesIcon className="h-5 w-5 text-white" />
+      {/* Navigation — fixed, scroll-aware */}
+      <nav
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'border-b border-[#0C0B5D]/10 bg-white/95 shadow-md backdrop-blur-md'
+            : 'border-b border-transparent bg-transparent'
+        }`}
+      >
+        <div className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all md:px-12 ${scrolled ? 'h-14' : 'h-16'}`}>
+          <Link href="/" className="flex items-center gap-3">
+            {/* SESAM seal */}
+            <span
+              className={`flex h-9 w-9 items-center justify-center rounded-full ring-1 transition ${
+                scrolled ? 'bg-white ring-[#0C0B5D]/15' : 'bg-white/95 ring-white/40'
+              }`}
+            >
+              <img
+                src="/images/sesam-logo.png"
+                alt="SESAM seal"
+                className="h-7 w-7 object-contain"
+              />
+            </span>
+            <div className="flex flex-col leading-none">
+              <span className={`text-lg font-bold tracking-tight ${scrolled ? 'text-[#0C0B5D]' : 'text-white'}`}>
+                SINAG
+              </span>
+              <span
+                className={`mt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] ${
+                  scrolled ? 'text-[#0C0B5D]/60' : 'text-white/70'
+                }`}
+              >
+                A SESAM Initiative
+              </span>
             </div>
-            <span className="text-xl font-bold text-white">SINAG</span>
           </Link>
 
           <div className="hidden items-center gap-8 md:flex">
-            <Link href="#" className="text-sm font-medium text-white/80 hover:text-white">
-              Home
-            </Link>
-            <Link href="#about" className="text-sm font-medium text-white/80 hover:text-white">
-              About
-            </Link>
-            <Link href="#features" className="text-sm font-medium text-white/80 hover:text-white">
-              Features
-            </Link>
-            <Link href="#programs" className="text-sm font-medium text-white/80 hover:text-white">
-              Programs
-            </Link>
+            {[
+              { href: '#', label: 'Home' },
+              { href: '#about', label: 'About' },
+              { href: '#features', label: 'Features' },
+              { href: '#programs', label: 'Programs' },
+            ].map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                className={`text-sm font-medium transition ${
+                  scrolled ? 'text-[#0C0B5D]/75 hover:text-[#0C0B5D]' : 'text-white/80 hover:text-white'
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowLoginModal(true)}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                scrolled
+                  ? 'text-[#0C0B5D] hover:bg-[#0C0B5D]/5'
+                  : 'text-white hover:bg-white/10'
+              }`}
             >
               Login
             </button>
             <button
               onClick={() => setShowRegisterModal(true)}
-              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-[#1e3a5f] hover:bg-white/90"
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                scrolled
+                  ? 'bg-[#0C0B5D] text-white shadow-sm hover:bg-[#0C0B5D]/90'
+                  : 'bg-white text-[#0C0B5D] hover:bg-white/90'
+              }`}
             >
               Sign Up
             </button>
@@ -103,15 +149,36 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen overflow-hidden bg-[#1e3a5f]">
-        {/* Background Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=80')`,
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/95 via-[#1e3a5f]/85 to-[#1e3a5f]/75" />
+      <section className="relative min-h-screen overflow-hidden bg-[#0C0B5D]">
+        {/* Background: Official SESAM building photograph */}
+        <div className="absolute inset-0">
+          <img
+            src="https://sesam.uplb.edu.ph/wp-content/uploads/2024/04/SESAM-building.png"
+            alt="UPLB School of Environmental Science and Management (SESAM) building"
+            className="h-full w-full object-cover object-center"
+            style={{ filter: 'brightness(0.55) saturate(0.92)' }}
+          />
+          {/* Brand-color veil — indigo dominant for unmistakable branding */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(100deg, rgba(12,11,93,0.95) 0%, rgba(12,11,93,0.86) 42%, rgba(12,11,93,0.62) 72%, rgba(12,11,93,0.48) 100%)',
+            }}
+          />
+          {/* Soft indigo highlight for depth */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 70% 60% at 78% 38%, rgba(63,61,180,0.32) 0%, transparent 65%)',
+            }}
+          />
+          {/* Bottom fade into next section */}
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
+            style={{ background: 'linear-gradient(to bottom, transparent, rgba(12,11,93,0.9))' }}
+          />
         </div>
 
         {/* Content */}
@@ -119,32 +186,56 @@ export default function HomePage() {
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-8">
             {/* Left: Hero Text */}
             <div className="flex flex-col justify-center">
-              <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
-                <LeafIcon className="h-4 w-4" />
-                SESAM Intelligent Natural-language Advising Guide
+              {/* Prominent SESAM seal medallion */}
+              <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-2xl ring-4 ring-white/20">
+                <img src="/images/sesam-logo.png" alt="SESAM seal" className="h-16 w-16 object-contain" />
               </div>
 
-              <h1 className="text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
+              {/* SESAM origin chip — explicit branding */}
+              <div className="mb-6 inline-flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/[0.08] py-1.5 pl-3 pr-4 backdrop-blur-md">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/95">
+                  A SESAM Initiative · UPLB
+                </span>
+              </div>
+
+              <h1
+                className="text-5xl font-black leading-[0.95] tracking-tight text-white md:text-7xl lg:text-8xl"
+                style={{ textShadow: '0 4px 24px rgba(0,0,0,0.45)' }}
+              >
                 SINAG
               </h1>
 
-              <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/80">
-                Your AI-powered companion for graduate advising. Streamline your academic journey
-                with intelligent milestone tracking, document management, and personalized AI
-                consultation powered by cutting-edge technology.
+              {/* Brand underline */}
+              <div className="mt-4 flex items-center gap-2">
+                <div className="h-[3px] w-20 rounded-full bg-white" />
+                <div className="h-[3px] w-2 rounded-full bg-white/40" />
+              </div>
+
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                Built for the School of Environmental Science and Management
+              </p>
+
+              <p className="mt-6 text-base font-semibold text-white md:text-lg">
+                SESAM Intelligent Natural-language Advising Guide
+              </p>
+
+              <p className="mt-3 max-w-lg text-base leading-relaxed text-white/85">
+                Your AI-powered companion for graduate advising at UPLB SESAM. Streamline your
+                academic journey with intelligent milestone tracking, document management, and
+                personalized AI consultation.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
                 <button
                   onClick={() => setShowRegisterModal(true)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-[#1e3a5f] hover:bg-white/90"
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-7 py-3.5 text-sm font-bold text-[#0C0B5D] shadow-lg shadow-black/20 transition hover:shadow-xl"
                 >
                   <SparklesIcon className="h-4 w-4" />
                   Get Started Free
                 </button>
                 <button
                   onClick={() => setShowLoginModal(true)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-3 text-sm font-medium text-white hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-3.5 text-sm font-medium text-white transition hover:bg-white/10"
                 >
                   Learn More
                   <ChevronRightIcon className="h-4 w-4" />
@@ -152,32 +243,32 @@ export default function HomePage() {
               </div>
 
               {/* Stats */}
-              <div className="mt-12 grid grid-cols-3 gap-6">
-                <div className="stat-display">
-                  <div className="stat-number">500+</div>
-                  <div className="stat-label">Graduate Students</div>
+              <div className="mt-12 grid grid-cols-3 gap-6 border-t border-white/15 pt-6">
+                <div>
+                  <div className="text-2xl font-bold text-white md:text-3xl">500+</div>
+                  <div className="mt-1 text-[11px] uppercase tracking-wider text-white/65">Graduate Students</div>
                 </div>
-                <div className="stat-display">
-                  <div className="stat-number">50+</div>
-                  <div className="stat-label">Faculty Advisers</div>
+                <div>
+                  <div className="text-2xl font-bold text-white md:text-3xl">50+</div>
+                  <div className="mt-1 text-[11px] uppercase tracking-wider text-white/65">Faculty Advisers</div>
                 </div>
-                <div className="stat-display">
-                  <div className="stat-number">4</div>
-                  <div className="stat-label">Degree Programs</div>
+                <div>
+                  <div className="text-2xl font-bold text-white md:text-3xl">4</div>
+                  <div className="mt-1 text-[11px] uppercase tracking-wider text-white/65">Degree Programs</div>
                 </div>
               </div>
 
               {/* Trust Badges */}
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90">
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/85">
                   <ShieldIcon className="h-3.5 w-3.5" />
                   Secure & Private
                 </div>
-                <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90">
+                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/85">
                   <SparklesIcon className="h-3.5 w-3.5" />
                   AI-Powered
                 </div>
-                <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90">
+                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/85">
                   <BuildingIcon className="h-3.5 w-3.5" />
                   UPLB Official
                 </div>
@@ -187,49 +278,49 @@ export default function HomePage() {
             {/* Right: Floating Feature Cards */}
             <div className="relative hidden lg:block">
               <div className="absolute right-0 top-1/2 w-80 -translate-y-1/2 space-y-4">
-                {/* Card 1: AI Consultation */}
-                <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md">
+                {/* Card 1: SESAM Workflow Consultation */}
+                <div className="rounded-xl border border-white/15 bg-white/[0.08] p-5 shadow-xl shadow-black/20 backdrop-blur-md">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-blue-light/20">
-                      <ChatIcon className="h-5 w-5 text-accent-blue" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white">
+                      <ChatIcon className="h-5 w-5 text-[#0C0B5D]" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">AI-Powered Consultation</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-white/70">
-                        Get instant answers to your academic questions 24/7 with our intelligent
-                        chatbot trained on SESAM graduate program policies and procedures.
+                      <h3 className="font-semibold text-white">SESAM Workflow Consultation</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/75">
+                        Ask anything about SESAM graduate workflows — admissions, proposal defense,
+                        ethics review, comprehensive exams, and final defense.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Card 2: Milestone Tracking */}
-                <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md">
+                {/* Card 2: JESAM Research Q&A */}
+                <div className="rounded-xl border border-white/15 bg-white/[0.08] p-5 shadow-xl shadow-black/20 backdrop-blur-md">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-purple-light/20">
-                      <ChartIcon className="h-5 w-5 text-accent-purple" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white">
+                      <DocumentIcon className="h-5 w-5 text-[#0C0B5D]" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">Smart Milestone Tracking</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-white/70">
-                        Track your progress from enrollment to graduation with automated
-                        reminders for proposal defense, comprehensive exams, and final defense.
+                      <h3 className="font-semibold text-white">JESAM Research Q&A</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/75">
+                        Surface findings from the Journal of Environmental Science and Management
+                        archive with cited, verifiable answers — no hallucinated sources.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Card 3: Document Management */}
-                <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md">
+                {/* Card 3: Milestone & Document Tracking */}
+                <div className="rounded-xl border border-white/15 bg-white/[0.08] p-5 shadow-xl shadow-black/20 backdrop-blur-md">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-green-light/20">
-                      <DocumentIcon className="h-5 w-5 text-accent-green" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white">
+                      <ChartIcon className="h-5 w-5 text-[#0C0B5D]" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">Document Management</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-white/70">
-                        Organize thesis chapters, IRB applications, and progress reports with
-                        version control and real-time collaboration with your adviser.
+                      <h3 className="font-semibold text-white">Milestones &amp; Documents</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-white/75">
+                        Track every SESAM milestone with versioned thesis chapters, IRB
+                        applications, and adviser approvals in one place.
                       </p>
                     </div>
                   </div>
@@ -248,50 +339,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Why Choose SINAG Section */}
-      <section className="bg-gradient-page py-20">
-        <div className="mx-auto max-w-7xl px-6 md:px-12">
-          <div className="mb-12 text-center">
-            <div className="pill-badge mx-auto mb-4 border border-[#1e3a5f]/20 bg-white text-[#1e3a5f]">
-              <SparklesIcon className="h-4 w-4" />
-              Why Choose SINAG?
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Transform Your Graduate Journey
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              Experience the future of graduate advising with cutting-edge AI technology
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            <FeatureCard
-              icon={<LightningIcon className="h-6 w-6" />}
-              iconBg="icon-bg-amber"
-              title="Lightning Fast"
-              description="Get instant answers to your academic questions. No more waiting days for email responses. SINAG AI responds in seconds."
-            />
-            <FeatureCard
-              icon={<SparklesIcon className="h-6 w-6" />}
-              iconBg="icon-bg-purple"
-              title="Intelligent Guidance"
-              description="Trained on SESAM policies and best practices. Get personalized recommendations for your research journey."
-            />
-            <FeatureCard
-              icon={<UsersIcon className="h-6 w-6" />}
-              iconBg="icon-bg-pink"
-              title="Student-Centered"
-              description="Designed with students in mind. Track progress, manage documents, and stay organized throughout your degree."
-            />
-          </div>
-        </div>
-      </section>
-
       {/* About SINAG Section */}
       <section id="about" className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="mb-12 text-center">
-            <div className="pill-badge mx-auto mb-4 border border-[#1e3a5f]/20 bg-[#1e3a5f]/5 text-[#1e3a5f]">
+            <div className="pill-badge mx-auto mb-4 border border-[#0C0B5D]/20 bg-[#0C0B5D]/5 text-[#0C0B5D]">
               <BuildingIcon className="h-4 w-4" />
               About SINAG
             </div>
@@ -305,13 +357,16 @@ export default function HomePage() {
 
           <div className="grid gap-12 lg:grid-cols-2">
             {/* Image */}
-            <div className="relative overflow-hidden rounded-2xl">
+            <div className="relative overflow-hidden rounded-2xl border border-[#0C0B5D]/10 shadow-lg">
               <img
-                src="https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80"
-                alt="SESAM Building"
+                src="https://sesam.uplb.edu.ph/wp-content/uploads/2024/04/SESAM-building.png"
+                alt="UPLB SESAM Building"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a5f]/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0C0B5D]/40 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 rounded-md bg-white/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#0C0B5D] shadow">
+                UPLB SESAM
+              </div>
             </div>
 
             {/* Features List */}
@@ -346,24 +401,89 @@ export default function HomePage() {
       <section id="features" className="bg-gradient-page py-20">
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">Platform Features</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              Comprehensive tools designed specifically for SESAM graduate programs
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md ring-2 ring-[#0C0B5D]/15">
+              <img src="/images/sesam-logo.png" alt="SESAM seal" className="h-12 w-12 object-contain" />
+            </div>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#0C0B5D]/15 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#0C0B5D]">
+              <SparklesIcon className="h-3.5 w-3.5" />
+              Built around SESAM
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
+              The Core of SINAG: SESAM-Aware AI Consultation
+            </h2>
+            <p className="mx-auto mt-4 max-w-3xl text-gray-600">
+              Every answer is grounded in the actual SESAM graduate handbook, program guidelines,
+              and the JESAM (Journal of Environmental Science and Management) archive — with
+              inline citations to the exact source document.
             </p>
           </div>
 
+          {/* Flagship feature — SESAM workflow + JESAM Q&A */}
+          <div className="mb-10 grid gap-6 lg:grid-cols-2">
+            {/* SESAM Workflow Consultation */}
+            <div className="rounded-2xl border border-[#0C0B5D]/10 bg-white p-8 shadow-card">
+              <div>
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#0C0B5D] text-white">
+                    <ChatIcon className="h-6 w-6" />
+                  </div>
+                  <span className="rounded-full bg-[#0C0B5D]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#0C0B5D]">
+                    Flagship Feature
+                  </span>
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-gray-900">SESAM Workflow Consultation</h3>
+                <p className="mb-4 text-sm leading-relaxed text-gray-600">
+                  Ask anything about the SESAM graduate journey — from admissions to final
+                  defense — and get cited, handbook-grounded answers in seconds.
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <FeatureListItem text="Admissions, enrolment & program requirements" />
+                  <FeatureListItem text="Proposal defense, comprehensive exams, final defense" />
+                  <FeatureListItem text="UPLB REB ethics review & data privacy compliance" />
+                  <FeatureListItem text="Thesis formatting, submission & graduation clearance" />
+                </ul>
+              </div>
+            </div>
+
+            {/* JESAM Research Q&A */}
+            <div className="rounded-2xl border border-[#0C0B5D]/10 bg-white p-8 shadow-card">
+              <div>
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#0C0B5D] text-white">
+                    <DocumentIcon className="h-6 w-6" />
+                  </div>
+                  <span className="rounded-full bg-[#0C0B5D]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#0C0B5D]">
+                    JESAM Archive
+                  </span>
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-gray-900">JESAM Research Q&A</h3>
+                <p className="mb-4 text-sm leading-relaxed text-gray-600">
+                  Search the Journal of Environmental Science and Management archive in plain
+                  English. Every answer cites the exact JESAM article it pulled from.
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <FeatureListItem text="Find prior SESAM theses & related JESAM studies" />
+                  <FeatureListItem text="Compare methodologies across past research" />
+                  <FeatureListItem text="Identify gaps for your own thesis topic" />
+                  <FeatureListItem text="Pull statistics & findings with verifiable citations" />
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Supporting features — three-column */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* For Students */}
             <div className="rounded-2xl bg-white p-6 shadow-card">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-blue-light">
                 <GraduationCapIcon className="h-6 w-6 text-accent-blue" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">For Students</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">For SESAM Students</h3>
               <ul className="space-y-2">
-                <FeatureListItem text="Track milestones and deadlines" />
-                <FeatureListItem text="Get AI-powered research guidance" />
-                <FeatureListItem text="Manage documents & versions" />
-                <FeatureListItem text="Communicate with advisers" />
+                <FeatureListItem text="Track milestones and SESAM deadlines" />
+                <FeatureListItem text="Ask the AI anything about SESAM workflows" />
+                <FeatureListItem text="Manage thesis chapters & versions" />
+                <FeatureListItem text="Communicate directly with SESAM advisers" />
               </ul>
             </div>
 
@@ -372,12 +492,12 @@ export default function HomePage() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-purple-light">
                 <UsersIcon className="h-6 w-6 text-accent-purple" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">For Advisers</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">For SESAM Advisers</h3>
               <ul className="space-y-2">
-                <FeatureListItem text="Monitor advisee progress" />
-                <FeatureListItem text="Review & approve documents" />
-                <FeatureListItem text="Provide timely feedback" />
-                <FeatureListItem text="Track multiple advisees" />
+                <FeatureListItem text="Monitor advisee progress in real-time" />
+                <FeatureListItem text="Review & approve thesis documents" />
+                <FeatureListItem text="Provide structured feedback" />
+                <FeatureListItem text="Coordinate across multiple advisees" />
               </ul>
             </div>
 
@@ -386,28 +506,28 @@ export default function HomePage() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-green-light">
                 <BuildingIcon className="h-6 w-6 text-accent-green" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">For Coordinators</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">For SESAM Coordinators</h3>
               <ul className="space-y-2">
-                <FeatureListItem text="Program-wide analytics" />
+                <FeatureListItem text="Program-wide SESAM analytics" />
                 <FeatureListItem text="Manage defense schedules" />
                 <FeatureListItem text="Student success tracking" />
                 <FeatureListItem text="Accreditation reporting" />
               </ul>
             </div>
 
-            {/* AI Consultation */}
+            {/* Milestones & Documents */}
             <div className="rounded-2xl bg-white p-6 shadow-card">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-amber-light">
-                <SparklesIcon className="h-6 w-6 text-accent-amber" />
+                <ChartIcon className="h-6 w-6 text-accent-amber" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">AI Consultation</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">Milestones &amp; Documents</h3>
               <p className="mb-3 text-sm text-gray-600">
-                Natural language interface for instant academic guidance
+                Every SESAM milestone, every revision — versioned and auditable.
               </p>
               <ul className="space-y-1 text-sm text-gray-500">
-                <li>• Research methodology advice</li>
-                <li>• Statistical test selection</li>
-                <li>• Academic policy queries</li>
+                <li>• Proposal &amp; final defense tracking</li>
+                <li>• Thesis chapter version history</li>
+                <li>• Adviser sign-off workflows</li>
               </ul>
             </div>
 
@@ -416,14 +536,14 @@ export default function HomePage() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-pink-light">
                 <UsersIcon className="h-6 w-6 text-accent-pink" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">Collaboration</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">Adviser Collaboration</h3>
               <p className="mb-3 text-sm text-gray-600">
-                Seamless communication between students and advisers
+                Keep every conversation, comment and approval inside SINAG.
               </p>
               <ul className="space-y-1 text-sm text-gray-500">
-                <li>• Document comments</li>
-                <li>• Meeting scheduling</li>
-                <li>• Progress discussions</li>
+                <li>• Inline document comments</li>
+                <li>• Consultation scheduling</li>
+                <li>• Progress discussion threads</li>
               </ul>
             </div>
 
@@ -432,14 +552,14 @@ export default function HomePage() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-teal-light">
                 <ShieldIcon className="h-6 w-6 text-accent-teal" />
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">Security</h3>
+              <h3 className="mb-3 text-lg font-semibold text-gray-900">SESAM-Grade Security</h3>
               <p className="mb-3 text-sm text-gray-600">
-                Enterprise-grade security and privacy protection
+                Built to UPLB data privacy and academic integrity standards.
               </p>
               <ul className="space-y-1 text-sm text-gray-500">
-                <li>• SSO authentication</li>
-                <li>• Encrypted data storage</li>
-                <li>• Role-based access</li>
+                <li>• Encrypted document storage</li>
+                <li>• Role-based access control</li>
+                <li>• Full audit trail</li>
               </ul>
             </div>
           </div>
@@ -529,28 +649,58 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative overflow-hidden bg-[#1e3a5f] py-20">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1920&q=80')`,
-          }}
-        />
+      <section className="relative overflow-hidden bg-[#0C0B5D] py-20">
+        <div className="absolute inset-0">
+          <img
+            src="https://sesam.uplb.edu.ph/wp-content/uploads/2024/04/SESAM-building.png"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover object-center"
+            style={{ filter: 'brightness(0.5) saturate(0.9)' }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(12,11,93,0.92) 0%, rgba(12,11,93,0.85) 100%)',
+            }}
+          />
+        </div>
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center md:px-12">
+          {/* SESAM seal — anchors the call-to-action with institutional identity */}
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-2xl ring-4 ring-white/20">
+            <img
+              src="/images/sesam-logo.png"
+              alt="SESAM seal"
+              className="h-16 w-16 object-contain"
+            />
+          </div>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/95 backdrop-blur">
+            School of Environmental Science and Management · UPLB
+          </div>
           <h2 className="text-3xl font-bold text-white md:text-4xl">
             Ready to Transform Your Graduate Journey?
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
-            Join hundreds of SESAM students and faculty using SINAG to streamline academic advising
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/85">
+            Join hundreds of SESAM students and faculty using SINAG to streamline academic
+            advising, surface JESAM research, and stay on top of every milestone.
           </p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-base font-semibold text-[#1e3a5f] hover:bg-white/90"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-base font-semibold text-[#0C0B5D] shadow-lg hover:bg-white/95"
             >
               Access SINAG Platform
               <ChevronRightIcon className="h-5 w-5" />
             </Link>
+            <a
+              href="https://sesam.uplb.edu.ph"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-transparent px-6 py-4 text-base font-medium text-white hover:bg-white/10"
+            >
+              Visit SESAM Website
+            </a>
           </div>
         </div>
       </section>
@@ -636,17 +786,30 @@ function FeatureListItem({ text }: { text: string }) {
 
 function Footer() {
   return (
-    <footer className="bg-[#0f172a] py-12 text-white">
-      <div className="mx-auto max-w-7xl px-6 md:px-12">
-        <div className="grid gap-8 md:grid-cols-3">
-          {/* Logo & Description */}
+    <footer className="bg-[#111827] py-12 text-white">
+      <div className="mx-auto max-w-7xl px-6 pt-12 md:px-12">
+        <div className="grid gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
+          {/* Logo & Description — co-branded SESAM × SINAG */}
           <div>
-            <div className="flex items-center gap-2">
-              <SparklesIcon className="h-6 w-6" />
-              <span className="text-lg font-bold">SINAG</span>
+            <div className="flex items-center gap-4">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md ring-2 ring-white/10">
+                <img
+                  src="/images/sesam-logo.png"
+                  alt="SESAM seal"
+                  className="h-14 w-14 object-contain"
+                />
+              </span>
+              <div className="flex flex-col leading-tight">
+                <span className="text-2xl font-bold tracking-tight">SINAG</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                  A SESAM Initiative
+                </span>
+              </div>
             </div>
-            <p className="mt-2 text-sm text-white/60">UPLB SESAM</p>
-            <p className="mt-4 text-xs leading-relaxed text-white/50">
+            <p className="mt-4 text-sm font-semibold text-white/85">
+              SESAM Intelligent Natural-language Advising Guide
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-white/60">
               School of Environmental Science and Management
               <br />
               University of the Philippines Los Baños
@@ -657,26 +820,26 @@ function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="mb-4 font-semibold">Quick Links</h4>
-            <ul className="space-y-2 text-sm text-white/60">
+            <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/95">Quick Links</h4>
+            <ul className="space-y-2 text-sm text-white/70">
               <li>
-                <Link href="#" className="hover:text-white">
+                <a href="https://sesam.uplb.edu.ph" target="_blank" rel="noopener noreferrer" className="hover:text-white">
                   SESAM Website
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="#" className="hover:text-white">
+                <a href="https://uplb.edu.ph" target="_blank" rel="noopener noreferrer" className="hover:text-white">
                   UPLB Homepage
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="#" className="hover:text-white">
+                <Link href="#programs" className="hover:text-white">
                   Graduate Programs
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-white">
-                  Support
+                <Link href="#features" className="hover:text-white">
+                  Platform Features
                 </Link>
               </li>
             </ul>
@@ -684,8 +847,8 @@ function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="mb-4 font-semibold">Contact</h4>
-            <ul className="space-y-2 text-sm text-white/60">
+            <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/95">Contact SESAM</h4>
+            <ul className="space-y-2 text-sm text-white/70">
               <li>Email: sesam@uplb.edu.ph</li>
               <li>Phone: (049) 536-2509</li>
               <li>Office Hours: Mon-Fri, 8AM-5PM</li>
@@ -693,8 +856,16 @@ function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-white/10 pt-8 text-center text-xs text-white/40">
-          © {new Date().getFullYear()} SINAG - SESAM Intelligent Natural-language Advising Guide. All rights reserved.
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/15 pt-8 text-xs text-white/55 md:flex-row">
+          <span>
+            © {new Date().getFullYear()} SINAG · SESAM Intelligent Natural-language Advising Guide
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white">
+              <img src="/images/sesam-logo.png" alt="" aria-hidden="true" className="h-4 w-4 object-contain" />
+            </span>
+            Powered by the School of Environmental Science and Management, UPLB
+          </span>
         </div>
       </div>
     </footer>
@@ -725,91 +896,125 @@ function LoginModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-        <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Welcome to SINAG</h2>
-          <p className="mt-1 text-sm text-gray-500">AI-Powered Graduate Advising Platform</p>
-        </div>
-
-        {/* SSO Button */}
-        <button className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e3a5f] px-4 py-3 text-sm font-medium text-white hover:bg-[#162b45]">
-          <BuildingIcon className="h-4 w-4" />
-          Sign in with UPLB SSO
-        </button>
-
-        <div className="relative mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-white px-2 text-gray-500">Or continue with</span>
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#0C0B5D]/10">
+        {/* Brand header strip with SESAM seal */}
+        <div className="relative bg-[#0C0B5D] px-8 pb-10 pt-8 text-white">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg ring-2 ring-white/30">
+              <img src="/images/sesam-logo.png" alt="SESAM seal" className="h-11 w-11 object-contain" />
+            </span>
+            <span className="mb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/75">
+              A SESAM Initiative · UPLB
+            </span>
+            <h2 className="text-2xl font-bold tracking-tight">Welcome back to SINAG</h2>
+            <p className="mt-1 text-xs text-white/70">
+              Sign in to access your SESAM graduate workspace
+            </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700">Institutional Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@uplb.edu.ph"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] focus:ring-1 focus:ring-[#1e3a5f]"
-              required
-            />
-          </div>
-
-          {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center rounded-lg bg-[#1e3a5f] px-4 py-3 text-sm font-medium text-white hover:bg-[#162b45] disabled:opacity-50"
-          >
-            {loading ? <LoadingSpinner size={16} className="text-white" /> : 'Sign In'}
+        <div className="px-8 pb-8 pt-6">
+          {/* SSO Button */}
+          <button className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-3 text-sm font-semibold text-white shadow hover:bg-[#0a0949]">
+            <BuildingIcon className="h-4 w-4" />
+            Sign in with UPLB SSO
           </button>
 
-          <div className="text-center">
-            <Link href="#" className="text-xs text-[#1e3a5f] hover:underline">
-              Forgot password?
-            </Link>
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-2 text-gray-500">Or continue with</span>
+            </div>
           </div>
 
-          <div className="text-center text-xs text-gray-500">
-            Don't have an account?{' '}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-700">Institutional Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@uplb.edu.ph"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#0C0B5D] focus:ring-2 focus:ring-[#0C0B5D]/20"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#0C0B5D] focus:ring-2 focus:ring-[#0C0B5D]/20"
+                required
+              />
+            </div>
+
+            {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
             <button
-              type="button"
-              onClick={onOpenRegister}
-              className="text-[#1e3a5f] hover:underline"
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0C0B5D] px-4 py-3 text-sm font-semibold text-white shadow hover:bg-[#0a0949] disabled:opacity-50"
             >
-              Create one
+              {loading ? <LoadingSpinner size={16} className="text-white" /> : (
+                <>
+                  Sign In
+                  <ChevronRightIcon className="h-4 w-4" />
+                </>
+              )}
             </button>
-          </div>
-        </form>
 
-        <button
-          onClick={onClose}
-          className="mt-4 w-full rounded-lg border border-gray-200 py-2 text-sm text-gray-600 hover:bg-gray-50"
-        >
-          Close
-        </button>
+            <div className="text-center">
+              <Link href="#" className="text-xs font-medium text-[#0C0B5D] hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+
+            <div className="text-center text-xs text-gray-500">
+              Don&apos;t have an account?{' '}
+              <button
+                type="button"
+                onClick={onOpenRegister}
+                className="font-semibold text-[#0C0B5D] hover:underline"
+              >
+                Create one
+              </button>
+            </div>
+          </form>
+
+          {/* Trust footer */}
+          <div className="mt-5 flex items-center justify-center gap-4 border-t border-gray-100 pt-4 text-[10px] uppercase tracking-wider text-gray-400">
+            <span className="flex items-center gap-1.5">
+              <ShieldIcon className="h-3 w-3" /> Secure
+            </span>
+            <span>·</span>
+            <span className="flex items-center gap-1.5">
+              <BuildingIcon className="h-3 w-3" /> UPLB SESAM
+            </span>
+            <span>·</span>
+            <span className="flex items-center gap-1.5">
+              <SparklesIcon className="h-3 w-3" /> AI-Powered
+            </span>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="mt-4 w-full rounded-lg border border-gray-200 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
