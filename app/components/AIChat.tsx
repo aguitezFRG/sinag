@@ -15,6 +15,10 @@ import {
   Beaker,
   Plus,
   X,
+  Copy,
+  Check,
+  ExternalLink,
+  BookMarked,
 } from 'lucide-react';
 import MarkdownMessage from './MarkdownMessage';
 
@@ -135,14 +139,44 @@ export default function AIChat({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [stableSessionId, setStableSessionId] = useState<string>(() => {
     return sessionId || `sess-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   });
 
+  // Scroll the *messages container* (not the window) so the page never jumps.
+  const scrollMessagesToBottom = (smooth = true) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  };
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollMessagesToBottom(true);
+  }, [messages.length]);
+
+  // While streaming, keep view pinned to bottom but use 'auto' to avoid jank.
+  useEffect(() => {
+    const streaming = messages.some((m) => m.isStreaming);
+    if (!streaming) return;
+    const t = setInterval(() => scrollMessagesToBottom(false), 350);
+    return () => clearInterval(t);
   }, [messages]);
+
+  // Auto-grow textarea up to ~6 lines
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }, [input]);
+
+  // Refocus the composer after a response completes so chatting feels continuous
+  useEffect(() => {
+    if (!loading && messages.length > 0) inputRef.current?.focus();
+  }, [loading, messages.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,113 +290,107 @@ export default function AIChat({
   function getDisplayedQuestions(starter: ConversationStarter) {
     return selectedCategory === starter.category
       ? starter.questions
-      : starter.questions.slice(0, 3);
+      : starter.questions.slice(0, 2);
   }
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
         {messages.length === 0 ? (
-          <div className="max-w-6xl mx-auto px-6 py-10">
+          <div className="max-w-6xl mx-auto px-6 py-8">
             {/* Welcome Header */}
-            <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-[#0C0B5D] rounded-2xl flex items-center justify-center shadow-2xl mx-auto mb-5 border-4 border-blue-400 relative">
-                <Sparkles className="w-10 h-10 text-white" />
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-white" />
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-[#0C0B5D] rounded-2xl flex items-center justify-center shadow-xl mx-auto mb-4 border-4 border-blue-400 relative">
+                <Sparkles className="w-8 h-8 text-white" />
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Zap className="w-3 h-3 text-white" />
                 </div>
               </div>
-              <div className="mb-3">
-                <h2 className="text-3xl font-bold text-[#0C0B5D] mb-1">SINAG</h2>
-                <p className="text-sm text-gray-600 italic font-medium">A SESAM Intelligent Natural-language Advising Guide</p>
+              <div className="mb-2">
+                <h2 className="text-2xl font-bold text-[#0C0B5D] mb-0.5">SINAG</h2>
+                <p className="text-xs text-gray-600 italic font-medium">A SESAM Intelligent Natural-language Advising Guide</p>
               </div>
-              <p className="text-base text-gray-700 max-w-2xl mx-auto mb-8 leading-relaxed">
-                I can suggest directions, surface relevant institutional documents, and help you think through your research — but all guidance here is advisory. Your faculty adviser has the final word.
+              <p className="text-sm text-gray-700 max-w-xl mx-auto mb-6 leading-relaxed">
+                Ask anything about your thesis — I&apos;ll cite SESAM docs and JESAM papers. Advisory only; your adviser has the final word.
               </p>
 
               {/* Capabilities */}
-              <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
-                <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-2">
-                    <Beaker className="w-5 h-5 text-white" />
+              <div className="hidden md:grid grid-cols-3 gap-3 max-w-2xl mx-auto">
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-1.5">
+                    <Beaker className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1 text-sm">Research Design</h3>
-                  <p className="text-xs text-gray-600">Methodology, sampling, instruments, analysis</p>
+                  <h3 className="font-semibold text-gray-900 text-xs">Research Design</h3>
                 </div>
-                <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-                  <div className="w-10 h-10 bg-[#0C0B5D] rounded-xl flex items-center justify-center mx-auto mb-2">
-                    <BarChart className="w-5 h-5 text-white" />
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="w-8 h-8 bg-[#0C0B5D] rounded-lg flex items-center justify-center mx-auto mb-1.5">
+                    <BarChart className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1 text-sm">Data Analysis</h3>
-                  <p className="text-xs text-gray-600">Statistical tests, visualization, interpretation</p>
+                  <h3 className="font-semibold text-gray-900 text-xs">Data Analysis</h3>
                 </div>
-                <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200">
-                  <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center mx-auto mb-2">
-                    <GraduationCap className="w-5 h-5 text-white" />
+                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-1.5">
+                    <GraduationCap className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1 text-sm">Thesis Writing</h3>
-                  <p className="text-xs text-gray-600">Structure, formatting, academic style</p>
+                  <h3 className="font-semibold text-gray-900 text-xs">Thesis Writing</h3>
                 </div>
               </div>
             </div>
 
             {/* Conversation Starters */}
             <div>
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-yellow-500" />
-                  What can I help you with today?
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-yellow-500" />
+                  Try one of these
                 </h2>
-                <p className="text-sm text-gray-500">Click any question to start</p>
+                <p className="text-xs text-gray-500">Click to send</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {conversationStarters.map((starter, idx) => {
                   const Icon = starter.icon;
                   return (
                     <div
                       key={idx}
-                      className={`bg-white rounded-2xl shadow-md border-2 ${starter.borderColor} p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-200`}
+                      className={`bg-white rounded-xl shadow-sm border ${starter.borderColor} p-3.5 hover:shadow-md transition-shadow`}
                     >
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className={`${starter.bgColor} p-2.5 rounded-xl shadow-sm border-2 ${starter.borderColor}`}>
-                          <Icon className={`w-5 h-5 ${starter.color}`} />
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className={`${starter.bgColor} p-2 rounded-lg border ${starter.borderColor}`}>
+                          <Icon className={`w-4 h-4 ${starter.color}`} />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-sm">{starter.category}</h3>
-                          <p className="text-xs text-gray-500 mt-0.5">{starter.questions.length} prompts</p>
-                        </div>
+                        <h3 className="font-semibold text-gray-900 text-xs leading-tight">{starter.category}</h3>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {getDisplayedQuestions(starter).map((question, qIdx) => (
                           <button
                             key={qIdx}
                             type="button"
                             onClick={() => handleStarterClick(question)}
-                            className="w-full text-left p-3 rounded-xl bg-gray-100 hover:bg-blue-100 hover:border-blue-300 border-2 border-transparent transition-all text-sm text-gray-700 hover:text-blue-900 group shadow-sm hover:shadow-md"
+                            className="w-full text-left p-2 rounded-lg bg-gray-50 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors text-xs text-gray-700 hover:text-blue-900 group"
                           >
                             <div className="flex items-start gap-2">
-                              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 flex-shrink-0 mt-0.5 group-hover:translate-x-1 transition-transform" />
-                              <span className="flex-1 font-medium">{question}</span>
+                              <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
+                              <span className="flex-1 leading-snug">{question}</span>
                             </div>
                           </button>
                         ))}
-                        {starter.questions.length > 3 && selectedCategory !== starter.category && (
+                        {starter.questions.length > 2 && selectedCategory !== starter.category && (
                           <button
                             type="button"
                             onClick={() => setSelectedCategory(starter.category)}
-                            className="w-full text-center p-3 rounded-xl bg-blue-100 hover:bg-blue-200 text-xs font-bold text-gray-700 hover:text-gray-900 transition-all shadow-sm"
+                            className="w-full text-center p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-all border border-blue-100"
                           >
                             <span className="flex items-center justify-center gap-1">
                               <Plus className="w-3 h-3" />
-                              Show {starter.questions.length - 3} more prompts
+                              {starter.questions.length - 2} more
                             </span>
                           </button>
                         )}
-                        {selectedCategory === starter.category && starter.questions.length > 3 && (
+                        {selectedCategory === starter.category && starter.questions.length > 2 && (
                           <button
                             type="button"
                             onClick={() => setSelectedCategory(null)}
-                            className="w-full text-center p-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 hover:text-gray-900 transition-all"
+                            className="w-full text-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-all"
                           >
                             <span className="flex items-center justify-center gap-1">
                               <X className="w-3 h-3" />
@@ -378,102 +406,35 @@ export default function AIChat({
             </div>
 
             {/* Tips */}
-            <div className="mt-8 bg-indigo-50 rounded-xl p-5 border-2 border-indigo-200">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-indigo-600" />
-                Tips for Best Results
-              </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
-                  <span>Be specific about your research topic and what stage you&apos;re at</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
-                  <span>Mention your degree program (MS or PhD) for tailored guidance</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
-                  <span>Ask follow-up questions to explore topics in depth</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
-                  <span>Ask follow-up questions to go deeper on any topic</span>
-                </div>
-              </div>
-              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800">
-                Advisory: All responses are suggestions only. Confirm with your faculty adviser before acting.
-              </div>
+            <div className="mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs text-amber-800 flex items-start gap-2">
+              <Zap className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-600" />
+              <span><strong>Tip:</strong> Be specific (program, stage, study site). All replies are advisory — confirm with your adviser.</span>
             </div>
           </div>
         ) : (
-          <div className="p-4 space-y-4">
+          <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 space-y-5">
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-blue-800 text-white'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {msg.role === 'assistant' ? (
-                    <>
-                      <MarkdownMessage content={msg.content} />
-                      {msg.isStreaming && (
-                        <span className="inline-block w-1.5 h-4 bg-gray-400 animate-pulse ml-0.5 align-middle opacity-70" />
-                      )}
-                    </>
-                  ) : (
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                  )}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-3 border-t border-gray-200/50 pt-2">
-                      <p className="text-xs font-medium opacity-70">Referenced guidance:</p>
-                      <ul className="mt-1 space-y-1">
-                        {msg.sources.map((s, i) => (
-                          <li key={i} className="text-xs opacity-70">
-                            {s.url ? (
-                              <a
-                                href={s.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline hover:opacity-100 transition-opacity"
-                              >
-                                {s.title}
-                              </a>
-                            ) : (
-                              <span>{s.title}</span>
-                            )}
-                            <span className="ml-1 opacity-60">({s.type})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <p className={`mt-1 text-[10px] ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
-                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
+              <ChatBubble key={msg.id} msg={msg} />
             ))}
 
             {loading && !messages.some((m) => m.isStreaming) && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl bg-gray-100 px-4 py-3 flex items-center gap-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="flex justify-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#0C0B5D] flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center gap-2 shadow-sm">
+                  <div className="w-2 h-2 bg-[#0C0B5D] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-[#0C0B5D] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-[#0C0B5D] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="text-xs text-gray-500 ml-1 italic">SINAG is thinking…</span>
                 </div>
               </div>
             )}
 
             {error && (
-              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+                <X className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
             <div ref={bottomRef} />
@@ -483,27 +444,371 @@ export default function AIChat({
         {messages.length === 0 && <div ref={bottomRef} />}
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your question..."
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm outline-none focus:border-blue-800 focus:ring-1 focus:ring-blue-800"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="inline-flex items-center rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
+      <form
+        onSubmit={handleSubmit}
+        className="border-t border-gray-200 bg-gradient-to-b from-white to-gray-50 px-3 py-3 sm:px-4 sm:py-3 flex-shrink-0"
+      >
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center gap-2 rounded-2xl border border-gray-300 bg-white pl-4 pr-2 py-1.5 shadow-sm focus-within:border-[#0C0B5D] focus-within:ring-2 focus-within:ring-[#0C0B5D]/20 transition">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e as unknown as React.FormEvent);
+                }
+              }}
+              placeholder={loading ? 'SINAG is responding…' : 'Ask anything about SESAM — your thesis, forms, ethics, or JESAM papers'}
+              rows={1}
+              className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder:text-gray-400 outline-none max-h-40 leading-6 py-1.5"
+              disabled={loading}
+              style={{ minHeight: '24px' }}
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0C0B5D] text-white hover:bg-[#0a0949] disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm flex-shrink-0"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
+          </div>
+          <p className="mt-1.5 text-[10px] text-gray-400 text-center">
+            SINAG can make mistakes. Verify important information with your adviser.
+          </p>
         </div>
       </form>
     </div>
   );
+}
+
+// ─── ChatBubble ─────────────────────────────────────────────────────────────
+
+function ChatBubble({ msg }: { msg: ChatMessage }) {
+  const [copied, setCopied] = useState(false);
+  const isUser = msg.role === 'user';
+
+  // Strip the "## References" section out of the markdown body so it can be
+  // rendered as a styled card below instead of plain markdown inside the bubble.
+  const { body: rawBody, parsedRefs } = parseAssistantContent(msg.content);
+
+  // Merge cited refs with retrieved guidance docs, then filter to only
+  // citations that actually appear in the body and renumber for clarity.
+  const allRefs = mergeRefsWithSources(parsedRefs, msg.sources);
+  const citationResult = processCitations(rawBody, allRefs);
+  const body = citationResult.body;
+  const mergedRefs = citationResult.refs;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* noop */
+    }
+  };
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end gap-3">
+        <div className="max-w-[85%] rounded-2xl bg-[#0C0B5D] text-white px-4 py-3 text-sm leading-relaxed shadow-sm">
+          <div className="whitespace-pre-wrap">{msg.content}</div>
+          <p className="mt-1.5 text-[10px] text-blue-200/80">
+            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+        <div className="w-9 h-9 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center flex-shrink-0">
+          <Users className="w-4 h-4 text-[#0C0B5D]" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-start gap-3">
+      <div className="w-9 h-9 rounded-xl bg-[#0C0B5D] flex items-center justify-center flex-shrink-0 shadow-md">
+        <Sparkles className="w-4 h-4 text-white" />
+      </div>
+      <div className="max-w-[88%] flex-1 min-w-0">
+        <div className="rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+          {/* Header strip */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-transparent">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#0C0B5D]">SINAG AI</span>
+              {msg.isStreaming && (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-blue-600 font-semibold">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse" />
+                  Thinking…
+                </span>
+              )}
+              {!msg.isStreaming && mergedRefs.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                  <BookMarked className="w-2.5 h-2.5" />
+                  {mergedRefs.length} sources
+                </span>
+              )}
+            </div>
+            {!msg.isStreaming && msg.content.length > 0 && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-[#0C0B5D] transition-colors px-2 py-1 rounded-md hover:bg-gray-50"
+                title="Copy response"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3 h-3" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Body */}
+          <div className="px-4 py-3 text-sm leading-relaxed text-gray-800">
+            {msg.isStreaming && body.length === 0 ? (
+              <ThinkingIndicator />
+            ) : (
+              <>
+                <MarkdownMessage content={body} />
+                {msg.isStreaming && (
+                  <span className="inline-block w-1.5 h-4 bg-[#0C0B5D] animate-pulse ml-0.5 align-middle" />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* References (parsed from markdown body + retrieved guidance docs) */}
+          {!msg.isStreaming && mergedRefs.length > 0 && (
+            <div className="px-4 pb-3">
+              <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/40 border-2 border-amber-300 shadow-sm p-3.5">
+                <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-amber-200">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-amber-600 flex items-center justify-center shadow-sm">
+                      <BookMarked className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                      References
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-amber-700 bg-white border border-amber-300 px-2 py-0.5 rounded-full">
+                    {mergedRefs.length} cited
+                  </span>
+                </div>
+                <ol className="space-y-1.5">
+                  {mergedRefs.map((ref, i) => (
+                    <li key={i} className="flex gap-2 text-xs text-gray-800 leading-relaxed">
+                      <span className="font-bold text-amber-800 flex-shrink-0 min-w-[1.5rem]">[{i + 1}]</span>
+                      {ref.url ? (
+                        <a
+                          href={ref.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-start gap-1 text-[#0C0B5D] hover:text-amber-900 hover:underline"
+                        >
+                          <span>{ref.text}</span>
+                          <ExternalLink className="w-3 h-3 mt-0.5 opacity-60 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <span>{ref.text}</span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Timestamp */}
+          <div className="px-4 pb-2 -mt-1">
+            <p className="text-[10px] text-gray-400">
+              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Splits an assistant markdown response into the main body and a list of
+ * reference strings, by detecting a trailing "## References" section
+ * with `[1] …`, `[2] …` lines.
+ *
+ * Also normalizes legacy escaped sequences (literal `\n`, `\t`) that may have
+ * been persisted into the DB by older template fallbacks.
+ */
+function parseAssistantContent(content: string): { body: string; parsedRefs: string[] } {
+  const normalized = sanitizeLegacyEscapes(content);
+  const refHeadingMatch = normalized.match(/\n#{1,3}\s*references\s*\n/i);
+  if (!refHeadingMatch || refHeadingMatch.index === undefined) {
+    return { body: normalized, parsedRefs: [] };
+  }
+  const body = normalized.slice(0, refHeadingMatch.index).trimEnd();
+  const refSection = normalized.slice(refHeadingMatch.index + refHeadingMatch[0].length);
+  const parsedRefs: string[] = [];
+  const lines = refSection.split('\n');
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    // Accept "[1] text", "1. text", or "- text"
+    const m =
+      line.match(/^\[\d+\]\s*(.+)$/) ||
+      line.match(/^\d+\.\s*(.+)$/) ||
+      line.match(/^[-*]\s*(.+)$/);
+    if (m) parsedRefs.push(m[1].trim());
+  }
+  return { body, parsedRefs };
+}
+
+/**
+ * Convert literal escape sequences like the string "\\n\\n" or "\\t" that
+ * appear in old persisted assistant responses (from a buggy template
+ * fallback) into real whitespace so markdown renders correctly.
+ */
+function sanitizeLegacyEscapes(s: string): string {
+  if (!s) return s;
+  // Only rewrite if the response actually contains the literal sequence.
+  if (!/\\n|\\t|\\"/.test(s)) return s;
+  return s
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '  ')
+    .replace(/\\"/g, '"');
+}
+
+interface MergedRef {
+  text: string;
+  url?: string;
+}
+
+/**
+ * Merge model-cited references with the retrieved guidance documents
+ * (server `meta.sources`). Dedup by lowercased title prefix so the same
+ * document is not listed twice.
+ */
+function mergeRefsWithSources(
+  parsedRefs: string[],
+  sources?: { title: string; type: string; url?: string }[]
+): MergedRef[] {
+  const out: MergedRef[] = parsedRefs.map((text) => {
+    const m = text.match(/(https?:\/\/\S+)/);
+    return { text, url: m?.[1] };
+  });
+  const seen = new Set(
+    out.map((r) => r.text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 60))
+  );
+  for (const s of sources ?? []) {
+    if (!s?.title) continue;
+    const key = s.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 60);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const typeLabel = s.type ? ` — ${s.type}` : '';
+    out.push({ text: `${formatTitle(s.title)}${typeLabel}`, url: s.url });
+  }
+  return out;
+}
+
+/** Friendly multi-stage thinking indicator shown before any text streams in. */
+function ThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-1">
+        <span className="w-1.5 h-1.5 bg-[#0C0B5D] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <span className="w-1.5 h-1.5 bg-[#0C0B5D] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <span className="w-1.5 h-1.5 bg-[#0C0B5D] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
+      <span className="italic">Thinking — searching SESAM library &amp; JESAM papers…</span>
+    </div>
+  );
+}
+
+/**
+ * Post-process the markdown body so that:
+ *  - `[synthesis]` markers are removed (they're noise to readers).
+ *  - Only references actually cited via `[N]` in the body are kept.
+ *  - Citations are renumbered sequentially based on first appearance, then
+ *    rendered as small superscript chips that link to the References card.
+ * Returns the rewritten body and the filtered+renumbered references list.
+ */
+function processCitations(
+  body: string,
+  allRefs: MergedRef[]
+): { body: string; refs: MergedRef[] } {
+  if (!body) return { body, refs: [] };
+
+  // Drop "[synthesis]" / "[Synthesis]" markers entirely (with optional preceding space).
+  let cleaned = body.replace(/\s*\[synthesis\]/gi, '');
+
+  // Find which numeric citations actually appear in the body, in order.
+  const usedOrder: number[] = [];
+  const seen = new Set<number>();
+  for (const m of cleaned.matchAll(/\[(\d+)\]/g)) {
+    const n = Number(m[1]);
+    if (!Number.isFinite(n) || n < 1 || n > allRefs.length) continue;
+    if (!seen.has(n)) {
+      seen.add(n);
+      usedOrder.push(n);
+    }
+  }
+
+  if (usedOrder.length === 0) {
+    // Nothing cited inline — hide the references card entirely. We only show
+    // sources the model actually used, never "related" suggestions.
+    return { body: cleaned, refs: [] };
+  }
+
+  // Build old→new index mapping and the filtered refs list.
+  const oldToNew = new Map<number, number>();
+  const refs: MergedRef[] = [];
+  usedOrder.forEach((oldIdx, i) => {
+    oldToNew.set(oldIdx, i + 1);
+    refs.push(allRefs[oldIdx - 1]);
+  });
+
+  // Rewrite each `[N]` in the body into a small superscript chip with the new number.
+  cleaned = cleaned.replace(/\[(\d+)\]/g, (full, raw) => {
+    const n = Number(raw);
+    const mapped = oldToNew.get(n);
+    if (!mapped) return ''; // drop uncited or out-of-range markers
+    return `<sup class="sinag-cite">${mapped}</sup>`;
+  });
+
+  return { body: cleaned, refs };
+}
+
+/** Pretty-print noisy DB titles like "Decadal Monitoring Of Mangal..." */
+function formatTitle(raw: string): string {
+  if (!raw) return 'Untitled document';
+  // Trim trailing token cut-offs (e.g. "Twentie") and add ellipsis
+  let t = raw.trim();
+  if (t.length > 110) t = t.slice(0, 110).trimEnd() + '…';
+  return t;
+}
+
+/** Map a guidance category/source-type to a colour scheme for the badge. */
+function getTypeColor(type?: string): { bg: string; text: string; border: string } {
+  const t = (type || '').toLowerCase();
+  if (t.includes('paper') || t.includes('jesam') || t.includes('journal')) {
+    return { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' };
+  }
+  if (t.includes('policy') || t.includes('rule')) {
+    return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' };
+  }
+  if (t.includes('checklist') || t.includes('template')) {
+    return { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+  }
+  // default: guideline / handbook / brochure
+  return { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' };
 }

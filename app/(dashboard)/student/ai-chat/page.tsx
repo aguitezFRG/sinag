@@ -113,7 +113,7 @@ export default function StudentAIChatPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100dvh-4rem)] overflow-hidden bg-gray-50">
+    <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-gray-50">
       {/* History Sidebar */}
       <div
         className={`${
@@ -202,7 +202,7 @@ export default function StudentAIChatPage() {
         </div>
 
         {/* Chat */}
-        <div className="flex-1 min-h-0 p-4">
+        <div className="flex-1 min-h-0 p-3 sm:p-4">
           {loadingHistory ? (
             <div className="flex h-full items-center justify-center rounded-xl border border-gray-200 bg-white text-sm text-gray-500 shadow-sm">
               Loading previous conversations...
