@@ -1,4 +1,4 @@
-import { supabaseAdmin, getGuidanceSignedUrl } from './supabase-admin';
+import { supabaseAdmin } from './supabase-admin';
 import { GoogleGenAI } from '@google/genai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
@@ -6,6 +6,10 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? '';
 const OPENROUTER_SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 const OPENROUTER_APP_NAME = 'SINAG';
+
+async function getGuidanceSignedUrl(fileUrl: string): Promise<string | null> {
+  return fileUrl || null;
+}
 
 export type QueryIntent =
   | 'topic_ideation'

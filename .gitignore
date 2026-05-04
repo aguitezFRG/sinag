@@ -44,7 +44,6 @@ next-env.d.ts
  *.mjs
 docs/
 imports/
-lib/
 logs/
 # models/
 private/

@@ -21,6 +21,7 @@ import {
   LeafIcon,
   ChevronRightIcon,
 } from './components/Icons';
+import HomePageChatbot from './components/HomePageChatbot';
 
 export default function HomePage() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -599,6 +600,7 @@ export default function HomePage() {
         />
       )}
       <RegisterModal isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} />
+      <HomePageChatbot />
     </div>
   );
 }
@@ -887,6 +889,7 @@ function LoginModal({
           </form>
         </div>
       </div>
+
     </div>
   );
 }
