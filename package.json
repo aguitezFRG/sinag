@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "migrate:supabase": "node scripts/migrate-supabase.mjs",
     "seed:supabase": "node scripts/seed-supabase.mjs"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^16.6.1",
     "jose": "^6.2.2",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",

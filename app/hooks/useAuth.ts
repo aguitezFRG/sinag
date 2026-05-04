@@ -12,7 +12,7 @@ export interface User {
   profile: {
     firstName: string;
     lastName: string;
-    avatar?: string;
+    avatar: string | null;
   };
 }
 

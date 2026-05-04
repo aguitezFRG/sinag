@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { toLegacyUser, UserRow } from '@/lib/supabase-mappers';
+import { toFrontendUser, UserRow } from '@/lib/supabase-mappers';
 
 export async function GET(req: NextRequest) {
   // 1. Read the token cookie from the request
@@ -30,5 +30,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ user: toLegacyUser(user as UserRow) });
+  return NextResponse.json({ user: toFrontendUser(user as UserRow) });
 }
