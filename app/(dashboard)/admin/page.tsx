@@ -4,13 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StatsCard from '@/app/components/StatsCard';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
-import DataTable from '@/app/components/DataTable';
-import { UsersIcon, StudentIcon, AdviserIcon, WorkflowIcon, ChatIcon, DocIcon, ListIcon, HealthIcon, LogIcon } from '@/app/components/Icons';
+import { UsersIcon, StudentIcon, AdviserIcon, LogIcon, ShieldIcon } from '@/app/components/Icons';
 
 interface SystemStats {
   totalUsers: number;
   totalStudents: number;
   totalAdvisers: number;
+  totalCoordinators: number;
+  totalAdmins: number;
+  activeUsers: number;
+  inactiveUsers: number;
   totalQueries: number;
   totalDocuments: number;
   totalWorkflows: number;
@@ -102,81 +105,82 @@ export default function AdminDashboard() {
 
       {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard title="Total Users" value={stats?.totalUsers || 0} icon={<UsersIcon />} />
-        <StatsCard title="Students" value={stats?.totalStudents || 0} icon={<StudentIcon />} />
-        <StatsCard title="Advisers" value={stats?.totalAdvisers || 0} icon={<AdviserIcon />} />
-        <StatsCard title="Active Workflows" value={stats?.activeWorkflows || 0} icon={<WorkflowIcon />} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard title="AI Queries" value={stats?.totalQueries || 0} icon={<ChatIcon />} />
-        <StatsCard title="Documents" value={stats?.totalDocuments || 0} icon={<DocIcon />} />
-        <StatsCard title="Total Workflows" value={stats?.totalWorkflows || 0} icon={<ListIcon />} />
-        <StatsCard title="System Health" value="Healthy" change="All services operational" changeType="positive" icon={<HealthIcon />} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Audit Logs</h3>
-            <Link href="/admin/audit-logs" className="text-sm font-medium text-[#0C0B5D] hover:underline">
-              View all
-            </Link>
+      {/* Account totals — live from Supabase */}
+      <div>
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Accounts Overview</h3>
+            <p className="text-xs text-gray-400">
+              Live counts from the SINAG database · {stats?.activeUsers ?? 0} active / {stats?.inactiveUsers ?? 0} inactive
+            </p>
           </div>
-          {audits.length > 0 ? (
-            <div className="mt-4 overflow-x-auto">
-              <DataTable
-                columns={[
-                  {
-                    key: 'action',
-                    header: 'Action',
-                    sortable: true,
-                    render: (a: AuditEntry) => (
-                      <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 capitalize">
-                        {a.action}
-                      </span>
-                    ),
-                  },
-                  { key: 'resource', header: 'Resource', sortable: true },
-                  {
-                    key: 'user',
-                    header: 'User',
-                    sortable: false,
-                    render: (a: AuditEntry) => a.userEmail || 'System',
-                  },
-                  {
-                    key: 'timestamp',
-                    header: 'Time',
-                    sortable: true,
-                    render: (a: AuditEntry) => new Date(a.timestamp).toLocaleString(),
-                  },
-                ]}
-                data={audits}
-                keyExtractor={(a) => a._id}
-                emptyMessage="No audit logs found."
-              />
-            </div>
-          ) : (
-            <div className="mt-4 rounded-lg bg-gray-50 py-8 text-center text-sm text-gray-500">
-              No audit logs found.
-            </div>
-          )}
+          <Link href="/admin/users" className="text-xs font-semibold text-[#0C0B5D] hover:underline">
+            Manage users →
+          </Link>
         </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <StatsCard title="Total Users" value={stats?.totalUsers ?? 0} icon={<UsersIcon />} />
+          <StatsCard title="Students" value={stats?.totalStudents ?? 0} icon={<StudentIcon />} />
+          <StatsCard title="Advisers" value={stats?.totalAdvisers ?? 0} icon={<AdviserIcon />} />
+          <StatsCard title="Coordinators" value={stats?.totalCoordinators ?? 0} icon={<UsersIcon />} />
+          <StatsCard title="Admins" value={stats?.totalAdmins ?? 0} icon={<ShieldIcon />} />
+        </div>
+      </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-          <div className="mt-4 space-y-2">
-            <Link href="/admin/users" className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
-              <UsersIcon className="h-5 w-5 text-[#0C0B5D]" />
-              Manage Users
-            </Link>
-            <Link href="/admin/audit-logs" className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0C0B5D]/10 text-[#0C0B5D]">
               <LogIcon />
-              View Audit Logs
-            </Link>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Recent Audit Logs</h3>
+              <p className="text-xs text-gray-500">Latest system activity across SINAG</p>
+            </div>
           </div>
+          <Link href="/admin/audit-logs" className="inline-flex items-center gap-1 rounded-lg border border-[#0C0B5D]/20 bg-white px-3 py-1.5 text-sm font-semibold text-[#0C0B5D] transition hover:bg-[#0C0B5D]/5">
+            View all
+          </Link>
         </div>
+        {audits.length > 0 ? (
+          <ul className="mt-2 divide-y divide-gray-100">
+            {audits.map((a) => {
+              const action = a.action.toLowerCase();
+              const tone =
+                action.includes('delete') || action.includes('remove')
+                  ? 'bg-red-50 text-red-700'
+                  : action.includes('create') || action.includes('add')
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : action.includes('update') || action.includes('edit')
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'bg-gray-100 text-gray-700';
+              return (
+                <li key={a._id} className="flex items-start gap-3 py-3">
+                  <span className={`mt-0.5 inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}>
+                    {a.action}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      <span className="text-[#0C0B5D]">{a.resource}</span>
+                      <span className="text-gray-500"> · by </span>
+                      <span>{a.userEmail || 'System'}</span>
+                      {a.userRole && (
+                        <span className="ml-2 inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gray-600">
+                          {a.userRole}
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500">{new Date(a.timestamp).toLocaleString()}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="mt-4 rounded-lg bg-gray-50 py-8 text-center text-sm text-gray-500">
+            No audit logs found.
+          </div>
+        )}
       </div>
     </div>
   );

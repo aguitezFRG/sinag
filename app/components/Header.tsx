@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
 import { User } from '@/app/hooks/useAuth';
-import { Bell } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 interface HeaderProps {
@@ -17,7 +14,6 @@ interface HeaderProps {
 export default function Header({ user, onMenuClick, onLogout }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
 
   const initials = user
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
@@ -28,22 +24,6 @@ export default function Header({ user, onMenuClick, onLogout }: HeaderProps) {
     : 'User';
 
   const roleLabel = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User';
-
-  // Get notifications path based on role
-  const getNotificationsPath = () => {
-    switch (user?.role) {
-      case 'student':
-        return '/notifications';
-      case 'adviser':
-        return '/adviser/notifications';
-      case 'coordinator':
-        return '/coordinator/notifications';
-      case 'admin':
-        return '/admin/notifications';
-      default:
-        return '/notifications';
-    }
-  };
 
   /* Close dropdown on outside click */
   useEffect(() => {
@@ -102,19 +82,8 @@ export default function Header({ user, onMenuClick, onLogout }: HeaderProps) {
 
       {/* Right: notifications + user dropdown */}
       <div className="flex items-center gap-4 sm:gap-6">
-        {/* Notification Bell */}
-        <div className="relative">
-          <Link
-            href={getNotificationsPath()}
-            className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors block"
-          >
-            <Bell className="w-5 h-5 text-gray-600" />
-            {/* Notification badge - static for now, can be dynamic */}
-            <span className="absolute top-1 right-1 bg-[#DC2626] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              3
-            </span>
-          </Link>
-        </div>
+        {/* Notification Bell — opens dropdown in place (no hidden route) */}
+        <NotificationBell />
 
         {/* User Avatar + Dropdown */}
         <div className="relative" ref={dropdownRef}>

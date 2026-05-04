@@ -6,8 +6,11 @@ export async function GET(req: NextRequest) {
   return withAuth(req, async (_req, _auth) => {
     const [
       usersCount,
-      studentsCount,
-      advisersCount,
+      studentUsersCount,
+      adviserUsersCount,
+      coordinatorUsersCount,
+      adminUsersCount,
+      activeUsersCount,
       queriesCount,
       documentsCount,
       workflows,
@@ -18,8 +21,11 @@ export async function GET(req: NextRequest) {
       studentRows,
     ] = await Promise.all([
       supabaseAdmin.from('users').select('*', { head: true, count: 'exact' }),
-      supabaseAdmin.from('students').select('*', { head: true, count: 'exact' }),
-      supabaseAdmin.from('advisers').select('*', { head: true, count: 'exact' }),
+      supabaseAdmin.from('users').select('*', { head: true, count: 'exact' }).eq('role', 'student'),
+      supabaseAdmin.from('users').select('*', { head: true, count: 'exact' }).eq('role', 'adviser'),
+      supabaseAdmin.from('users').select('*', { head: true, count: 'exact' }).eq('role', 'coordinator'),
+      supabaseAdmin.from('users').select('*', { head: true, count: 'exact' }).eq('role', 'admin'),
+      supabaseAdmin.from('users').select('*', { head: true, count: 'exact' }).eq('is_active', true),
       supabaseAdmin.from('ai_queries').select('*', { head: true, count: 'exact' }),
       supabaseAdmin.from('documents').select('*', { head: true, count: 'exact' }),
       supabaseAdmin.from('workflows').select('id, status, student_id'),
@@ -81,8 +87,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       totalUsers: usersCount.count ?? 0,
-      totalStudents: studentsCount.count ?? 0,
-      totalAdvisers: advisersCount.count ?? 0,
+      totalStudents: studentUsersCount.count ?? 0,
+      totalAdvisers: adviserUsersCount.count ?? 0,
+      totalCoordinators: coordinatorUsersCount.count ?? 0,
+      totalAdmins: adminUsersCount.count ?? 0,
+      activeUsers: activeUsersCount.count ?? 0,
+      inactiveUsers: (usersCount.count ?? 0) - (activeUsersCount.count ?? 0),
       totalQueries: queriesCount.count ?? 0,
       totalDocuments: documentsCount.count ?? 0,
       totalWorkflows: workflowRows.length,
