@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  BookMarked,
   Check,
   Copy,
+  ExternalLink,
   Lightbulb,
   Maximize2,
   MessageCircle,
@@ -44,6 +46,11 @@ interface HomePageChatbotProps {
   onOpenLoginModal?: () => void;
 }
 
+interface MergedRef {
+  text: string;
+  url?: string;
+}
+
 const SESSION_STORAGE_KEY = 'sinag-homepage-chat-session';
 
 function createSessionId() {
@@ -51,6 +58,63 @@ function createSessionId() {
     return crypto.randomUUID();
   }
   return `homepage-${Date.now()}`;
+}
+
+function formatTitle(raw: string): string {
+  if (!raw) return 'Untitled document';
+  let title = raw.trim();
+  if (title.length > 110) title = `${title.slice(0, 110).trimEnd()}…`;
+  return title;
+}
+
+function sanitizeLegacyEscapes(s: string): string {
+  if (!s) return s;
+  if (!/\\n|\\t|\\"/.test(s)) return s;
+  return s.replace(/\\n/g, '\n').replace(/\\t/g, '  ').replace(/\\"/g, '"');
+}
+
+function parseAssistantContent(content: string): { body: string; parsedRefs: string[] } {
+  const normalized = sanitizeLegacyEscapes(content);
+  const refHeadingMatch = normalized.match(/\n#{1,3}\s*references\s*\n/i);
+  if (!refHeadingMatch || refHeadingMatch.index === undefined) {
+    return { body: normalized, parsedRefs: [] };
+  }
+
+  const body = normalized.slice(0, refHeadingMatch.index).trimEnd();
+  const refSection = normalized.slice(refHeadingMatch.index + refHeadingMatch[0].length);
+  const parsedRefs: string[] = [];
+
+  for (const raw of refSection.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const match =
+      line.match(/^\[\d+\]\s*(.+)$/) || line.match(/^\d+\.\s*(.+)$/) || line.match(/^[-*]\s*(.+)$/);
+    if (match) parsedRefs.push(match[1].trim());
+  }
+
+  return { body, parsedRefs };
+}
+
+function mergeRefsWithSources(parsedRefs: string[], sources?: ChatSource[]): MergedRef[] {
+  const out: MergedRef[] = parsedRefs.map((text) => {
+    const match = text.match(/(https?:\/\/\S+)/);
+    return { text, url: match?.[1] };
+  });
+
+  const seen = new Set(
+    out.map((ref) => ref.text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 60))
+  );
+
+  for (const source of sources ?? []) {
+    if (!source?.title) continue;
+    const key = source.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 60);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const typeLabel = source.type ? ` — ${source.type}` : '';
+    out.push({ text: `${formatTitle(source.title)}${typeLabel}`, url: source.url });
+  }
+
+  return out;
 }
 
 export default function HomePageChatbot({ onOpenLoginModal }: HomePageChatbotProps = {}) {
@@ -187,7 +251,7 @@ export default function HomePageChatbot({ onOpenLoginModal }: HomePageChatbotPro
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0C0B5D] shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl animate-pulse"
+        className="fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-[#0C0B5D] text-white shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl"
         title="Ask SINAG"
         aria-label="Open chat"
       >
@@ -310,36 +374,43 @@ export default function HomePageChatbot({ onOpenLoginModal }: HomePageChatbotPro
 
           <form
             onSubmit={handleSubmit}
-            className="flex-shrink-0 border-t border-gray-200 bg-white px-3 py-2.5"
+            className="flex-shrink-0 border-t border-gray-200 bg-gradient-to-b from-white to-gray-50 px-3 py-3 sm:px-4 sm:py-3"
           >
-            <div className="flex items-end gap-2">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    void handleSubmit(e as unknown as React.FormEvent);
+            <div className="mx-auto max-w-5xl">
+              <div className="flex items-center gap-2 rounded-2xl border border-gray-300 bg-white pl-4 pr-2 py-1.5 shadow-sm transition focus-within:border-[#0C0B5D] focus-within:ring-2 focus-within:ring-[#0C0B5D]/20">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSubmit(e as unknown as React.FormEvent);
+                    }
+                  }}
+                  placeholder={
+                    loading
+                      ? 'SINAG is responding…'
+                      : 'Ask anything about SESAM — your thesis, forms, ethics, or JESAM papers'
                   }
-                }}
-                placeholder="Ask about SESAM..."
-                rows={1}
-                className="max-h-28 flex-1 resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-800 placeholder:text-gray-400 outline-none transition focus:border-[#0C0B5D] focus:ring-2 focus:ring-[#0C0B5D]/20"
-                disabled={loading}
-                style={{ minHeight: '32px' }}
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#0C0B5D] text-white transition hover:bg-[#0a0949] disabled:opacity-50"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
+                  rows={1}
+                  className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-sm leading-6 text-gray-800 outline-none placeholder:text-gray-400"
+                  disabled={loading}
+                  style={{ minHeight: '24px' }}
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !input.trim()}
+                  aria-label="Send message"
+                  className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#0C0B5D] text-white shadow-sm transition hover:bg-[#0a0949] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-1.5 text-center text-[10px] text-gray-400">
+                SINAG can make mistakes. Verify important information with your adviser.
+              </p>
             </div>
-            <p className="mt-1 text-center text-[9px] text-gray-400">
-              Advisory only - always confirm with your adviser
-            </p>
           </form>
         </>
       )}
@@ -356,6 +427,8 @@ function ChatBubble({
 }) {
   const [copied, setCopied] = useState(false);
   const isUser = msg.role === 'user';
+  const { body, parsedRefs } = parseAssistantContent(msg.content);
+  const mergedRefs = mergeRefsWithSources(parsedRefs, msg.sources);
 
   const handleCopy = async () => {
     try {
@@ -369,41 +442,47 @@ function ChatBubble({
 
   if (isUser) {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl bg-[#0C0B5D] px-3 py-2 text-xs leading-relaxed text-white">
-          {msg.content}
+      <div className="flex justify-end gap-3">
+        <div className="max-w-[85%] rounded-2xl bg-[#0C0B5D] px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
+          <div className="whitespace-pre-wrap">{msg.content}</div>
+          <p className="mt-1.5 text-[10px] text-blue-200/80">
+            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-blue-200 bg-blue-100">
+          <MessageCircle className="h-4 w-4 text-[#0C0B5D]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex justify-start">
-      <div className="min-w-0 flex-1 max-w-[85%]">
+    <div className="flex justify-start gap-3">
+      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#0C0B5D] shadow-md">
+        <Sparkles className="h-4 w-4 text-white" />
+      </div>
+      <div className="min-w-0 flex-1 max-w-[88%]">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="px-3 py-2.5 text-xs leading-relaxed text-gray-800">
-            <MarkdownMessage content={msg.content} />
-          </div>
-
-          <div className="flex items-center justify-between gap-2 border-t border-gray-100 bg-gray-50 px-3 py-1.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-transparent px-4 py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#0C0B5D]">SINAG AI</span>
               {msg.isAdvising && (
-                <button
-                  onClick={onOpenLoginModal}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded border-none bg-blue-50 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700 transition hover:bg-blue-100"
-                >
-                  Tip: Log in for deep guidance
-                </button>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-600" />
+                  Advisory only
+                </span>
               )}
-              {msg.sources && msg.sources.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">
-                  Grounded in {msg.sources.length} source{msg.sources.length === 1 ? '' : 's'}
+              {mergedRefs.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                  <BookMarked className="h-2.5 w-2.5" />
+                  {mergedRefs.length} sources
                 </span>
               )}
             </div>
             <button
               onClick={handleCopy}
-              className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-gray-500 transition hover:bg-white hover:text-gray-700"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-gray-500 transition-colors hover:bg-gray-50 hover:text-[#0C0B5D]"
+              title="Copy response"
             >
               {copied ? (
                 <>
@@ -419,30 +498,67 @@ function ChatBubble({
             </button>
           </div>
 
-          {msg.sources && msg.sources.length > 0 && (
-            <div className="border-t border-gray-100 bg-white px-3 py-2">
-              <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-gray-400">
-                Sources
-              </p>
-              <ul className="space-y-1">
-                {msg.sources.map((source, index) => (
-                  <li key={`${source.title}-${index}`} className="text-[10px] text-gray-600">
-                    {source.url ? (
-                      <a
-                        href={source.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="font-medium text-[#0C0B5D] hover:underline"
-                      >
-                        {source.title}
-                      </a>
-                    ) : (
-                      <span className="font-medium text-gray-800">{source.title}</span>
-                    )}
-                    {source.type ? <span className="text-gray-400"> · {source.type}</span> : null}
-                  </li>
-                ))}
-              </ul>
+          <div className="px-4 py-3 text-sm leading-relaxed text-gray-800">
+            <MarkdownMessage content={body || msg.content} />
+          </div>
+
+          {mergedRefs.length > 0 && (
+            <div className="px-4 pb-3">
+              <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100/40 p-3.5 shadow-sm">
+                <div className="mb-2.5 flex items-center justify-between border-b border-amber-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-600 shadow-sm">
+                      <BookMarked className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                      References
+                    </span>
+                  </div>
+                  <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    {mergedRefs.length} cited
+                  </span>
+                </div>
+
+                <ol className="space-y-1.5">
+                  {mergedRefs.map((ref, i) => (
+                    <li key={`${ref.text}-${i}`} className="flex gap-2 text-xs leading-relaxed text-gray-800">
+                      <span className="min-w-[1.5rem] flex-shrink-0 font-bold text-amber-800">
+                        [{i + 1}]
+                      </span>
+                      {ref.url ? (
+                        <a
+                          href={ref.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-start gap-1 text-[#0C0B5D] hover:underline"
+                        >
+                          <span>{ref.text}</span>
+                          <ExternalLink className="mt-0.5 h-3 w-3 flex-shrink-0 opacity-60" />
+                        </a>
+                      ) : (
+                        <span>{ref.text}</span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          )}
+
+          <div className="px-4 pb-2 -mt-1">
+            <p className="text-[10px] text-gray-400">
+              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+
+          {msg.isAdvising && onOpenLoginModal && (
+            <div className="border-t border-gray-100 bg-gray-50 px-4 py-2">
+              <button
+                onClick={onOpenLoginModal}
+                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700 transition hover:bg-blue-100"
+              >
+                Log in for deeper guidance
+              </button>
             </div>
           )}
         </div>
