@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
           }
 
           // Persist after stream completes
-          const { data: queryRow } = await supabaseAdmin
+          const { data: queryRow, error: queryInsertError } = await supabaseAdmin
             .from('ai_queries')
             .insert({
               user_id: auth.userId,
@@ -75,8 +75,12 @@ export async function POST(req: NextRequest) {
             .select('id, user_id, session_id, query, response, intent, is_flagged, created_at')
             .single();
 
+          if (queryInsertError) {
+            console.error('[queries] ai_queries insert failed:', queryInsertError.message, queryInsertError.details ?? '');
+          }
+
           if (queryRow && meta.sources.length > 0) {
-            await supabaseAdmin.from('ai_query_sources').insert(
+            const { error: sourcesInsertError } = await supabaseAdmin.from('ai_query_sources').insert(
               meta.sources.map((source) => ({
                 ai_query_id: queryRow.id,
                 title: source.title || null,
@@ -84,6 +88,9 @@ export async function POST(req: NextRequest) {
                 url: source.url || null,
               }))
             );
+            if (sourcesInsertError) {
+              console.error('[queries] ai_query_sources insert failed:', sourcesInsertError.message, sourcesInsertError.details ?? '');
+            }
           }
 
           await supabaseAdmin.from('audit_logs').insert({
