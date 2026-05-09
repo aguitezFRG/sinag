@@ -5,12 +5,14 @@ import { processQuery } from '@/lib/ai-service';
 import { z } from 'zod';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_QUERY_LENGTH = 500;
+
 function isUuid(value: unknown): boolean {
   return typeof value === 'string' && UUID_RE.test(value);
 }
 
 const querySchema = z.object({
-  query: z.string().min(1),
+  query: z.string().trim().min(1).max(MAX_QUERY_LENGTH),
   sessionId: z.string().optional(),
 });
 
