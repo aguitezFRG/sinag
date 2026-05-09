@@ -235,6 +235,27 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
     for (const r of rows ?? []) if (!seen.has(r.id)) seen.set(r.id, r);
   };
 
+  // Detect when the user is explicitly asking about JESAM papers, or asking
+  // for an enumeration ("list all", "how many", "show every"). When true we
+  // surface the FULL set of active JESAM-tagged entries instead of the
+  // default top-N — the AI can't enumerate what it never sees.
+  const isExplicitJesam = /\bjesam\b/i.test(query);
+  const isListingQuery =
+    /\b(list|all|every|each|how\s+many|count|show\s+(?:me\s+)?(?:all|every|the)|complete\s+list|full\s+list|enumerate)\b/i.test(query);
+
+  // 0) JESAM-explicit branch: fetch every active JESAM-tagged resource so the
+  //    model can give a complete answer when asked "how many JESAM studies?"
+  if (isExplicitJesam) {
+    const { data } = await supabaseAdmin
+      .from('guidance_resources')
+      .select('id, title, category, content, file_url, tags, is_active')
+      .eq('is_active', true)
+      .overlaps('tags', ['jesam', 'JESAM'])
+      .order('title', { ascending: true })
+      .limit(50);
+    push(data as GuidanceResource[] | null);
+  }
+
   // 1) FTS over title+content (only when we have meaningful keywords)
   if (sanitized) {
     const { data } = await supabaseAdmin
@@ -242,7 +263,7 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
       .select('id, title, category, content, file_url, tags, is_active')
       .eq('is_active', true)
       .textSearch('search_vector', sanitized, { type: 'plain', config: 'english' })
-      .limit(5);
+      .limit(isListingQuery ? 15 : 8);
     push(data as GuidanceResource[] | null);
   }
 
@@ -261,7 +282,7 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
       .eq('is_active', true)
       .overlaps('tags', tagFilter)
       .not('tags', 'cs', '{jesam}') // exclude JESAM-tagged research papers
-      .limit(8);
+      .limit(10);
     push(data as GuidanceResource[] | null);
   }
 
@@ -274,7 +295,7 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
         .select('id, title, category, content, file_url, tags, is_active')
         .eq('is_active', true)
         .overlaps('tags', tagCandidates)
-        .limit(5);
+        .limit(isListingQuery ? 15 : 10);
       push(data as GuidanceResource[] | null);
     }
   }
@@ -288,7 +309,7 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
         .select('id, title, category, content, file_url, tags, is_active')
         .eq('is_active', true)
         .ilike('title', `%${probe}%`)
-        .limit(5);
+        .limit(8);
       push(data as GuidanceResource[] | null);
     }
   }
@@ -299,12 +320,19 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
 
   // Rank by intent
   const out = Array.from(seen.values()).filter((r) => isUsableTitle(r.title));
+
+  // Final cap depends on the query type. Listing/JESAM-explicit queries need
+  // the full set; everyday research questions stay tight to keep the prompt
+  // focused.
+  const finalCap = isExplicitJesam ? 25 : isListingQuery ? 18 : intent === 'research' ? 10 : 8;
+
   if (intent === 'research') {
     out.sort((a, b) => {
       const ja = (a.tags ?? []).some((t) => t.toLowerCase() === 'jesam') ? 1 : 0;
       const jb = (b.tags ?? []).some((t) => t.toLowerCase() === 'jesam') ? 1 : 0;
       return jb - ja;
     });
+    return out.slice(0, finalCap);
   } else if (intent === 'procedural') {
     const isFormatQ = /\b(format|formatting|margin|font|spacing|citation|reference style|chapter|appendix)\b/i.test(query);
     out.sort((a, b) => {
@@ -324,9 +352,9 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
       const order: Record<string, number> = { policy: 0, guideline: 1, checklist: 2, template: 3 };
       return (order[a.category] ?? 9) - (order[b.category] ?? 9);
     });
-    return out.filter((r) => !(r.tags ?? []).some((t) => t.toLowerCase() === 'jesam')).slice(0, 5);
+    return out.filter((r) => !(r.tags ?? []).some((t) => t.toLowerCase() === 'jesam')).slice(0, finalCap);
   }
-  return out.slice(0, 5);
+  return out.slice(0, finalCap);
 }
 
 // ── Session history ───────────────────────────────────────────────────────────
@@ -356,8 +384,13 @@ async function fetchSessionHistory(sessionId: string): Promise<SessionTurn[]> {
 function buildCompactSystemPrompt(
   resources: GuidanceResource[],
   signedUrls: Map<string, string>,
-  intent: QueryIntent
+  intent: QueryIntent,
+  query: string = ''
 ): string {
+  const isExplicitJesam = /\bjesam\b/i.test(query);
+  const isListingQuery =
+    /\b(list|all|every|each|how\s+many|count|show\s+(?:me\s+)?(?:all|every|the)|complete\s+list|full\s+list|enumerate)\b/i.test(query);
+  const enumerateMode = isExplicitJesam || isListingQuery;
   const resourceLines = resources
     .map((r) => {
       const excerpt = r.content.slice(0, 350).trimEnd();
@@ -390,13 +423,14 @@ OUTPUT FORMAT (STRICT — your response is INVALID without this)
 ============================================================
 EVERY response MUST end with a "## References" section. EVERY response MUST contain at least 1 inline numbered citation like [1] in the body. NO exceptions — this includes procedural answers, lists, timelines, and short replies.
 
-Required structure:
+Required structure (the References section MUST be a markdown numbered list — each reference on its own line, never concatenated into a paragraph):
 
   <your markdown answer with [1], [2], [3] markers inline>
 
   ## References
-  [1] <Exact title of source 1> — <category or type>
-  [2] <Exact title of source 2> — <category or type>
+
+  1. **<Exact title of source 1>** — <category or type>
+  2. **<Exact title of source 2>** — <category or type>
 
 Concrete example for the question "How do I apply for SESAM admission?":
 
@@ -407,8 +441,9 @@ Concrete example for the question "How do I apply for SESAM admission?":
   3. **Submit online** through the UPLB Graduate School portal [2].
 
   ## References
-  [1] SESAM Graduate Student Handbook — guideline
-  [2] UPLB Graduate School Admission Guidelines — policy
+
+  1. **SESAM Graduate Student Handbook** — guideline
+  2. **UPLB Graduate School Admission Guidelines** — policy
 
 ============================================================
 CITATION RULES
@@ -437,7 +472,12 @@ ${
       : '============================================================\nNO LIBRARY MATCH\n============================================================\nNo retrieved doc matched. Answer from general SESAM/UPLB thesis knowledge. Still produce inline [N] citations and a "## References" section, citing standard institutional sources by name (e.g. "UPLB Graduate School Handbook", "SESAM Graduate Manual").'
   }
 
-REMINDER: Your response MUST end with "## References" and contain at least one [N] marker. Do NOT add any "Advisory" disclaimer at the end — the UI shows that separately.`;
+${
+    enumerateMode
+      ? `\n============================================================\nENUMERATION MODE\n============================================================\nThe user is asking for a complete list / count / "all" of something${isExplicitJesam ? ' (specifically JESAM journal articles)' : ''}. You MUST:\n- List EVERY relevant retrieved entry above, by full title — do not summarize, do not pick "top" ones.\n- State the exact count up front (e.g., "There are N JESAM articles in the SINAG library:").\n- Use a numbered list so the user can see the full set.\n- Cite each entry with [N] markers and include them all in the References section.\n`
+      : ''
+  }
+REMINDER: Your response MUST end with a "## References" heading on its own line, followed by a blank line, followed by a markdown NUMBERED LIST where each reference is on its own line (e.g. "1. **Title** — category"). NEVER concatenate multiple references into a single paragraph. Your response MUST contain at least one [N] marker inline. Do NOT add any "Advisory" disclaimer at the end — the UI shows that separately.`;
 }
 
 // ── Gemini streaming ──────────────────────────────────────────────────────────
@@ -1037,7 +1077,7 @@ export async function processQuery(
   );
 
   const { intent, confidence } = determineIntentWithConfidence(query);
-  const systemPrompt = buildCompactSystemPrompt(resources, signedUrls, intent);
+  const systemPrompt = buildCompactSystemPrompt(resources, signedUrls, intent, query);
 
   let stream: AsyncIterable<string>;
   try {

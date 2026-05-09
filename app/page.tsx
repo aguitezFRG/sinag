@@ -528,6 +528,87 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* About SESAM Programs — narrative section */}
+      <section id="sesam-overview" className="bg-gradient-to-b from-white to-gray-50 py-16 sm:py-20">
+        <div className="mx-auto max-w-5xl px-6 md:px-12">
+          <div className="mb-10 text-center">
+            <span className="inline-block px-3 py-1 rounded-full bg-[#0C0B5D]/5 border border-[#0C0B5D]/10 text-[10px] font-bold uppercase tracking-[0.18em] text-[#0C0B5D]">
+              About the Programs
+            </span>
+            <h2 className="mt-4 text-2xl font-bold text-gray-900 md:text-3xl">
+              Foundation, Core, and Cross-Disciplinary Coursework
+            </h2>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0C0B5D]/10 text-[#0C0B5D]">
+                  <DocumentIcon className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-semibold text-gray-900">Curriculum Foundation</h3>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-600">
+                SESAM offers the foundation and core courses for the M.S. and Ph.D. programs in
+                Environmental Science. Other major courses prescribed by the Advisory Committee
+                can be drawn from the offerings of various UPLB units and other UP units —
+                allowing each unit to contribute the basic disciplines that strengthen graduate
+                research.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0C0B5D]/10 text-[#0C0B5D]">
+                  <LeafIcon className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-semibold text-gray-900">Cross-Disciplinary Reach</h3>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-600">
+                SESAM provides graduate students of other units the necessary core and foundation
+                courses to understand the environmental dimension of their fields, and actively
+                participates in the Revitalized General Education Program — instilling the value
+                of a dynamic, synergistic relationship between people, culture, and environment.
+              </p>
+            </div>
+
+            <div className="md:col-span-2 rounded-2xl border border-[#0C0B5D]/15 bg-gradient-to-br from-[#0C0B5D]/[0.04] to-amber-50/40 p-6 sm:p-7">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0C0B5D] text-white">
+                  <BuildingIcon className="h-4 w-4" />
+                </div>
+                <h3 className="text-base font-semibold text-gray-900">Program Governance</h3>
+              </div>
+              <p className="text-sm leading-relaxed text-gray-700">
+                The Graduate School supervises the implementation of both the M.Sc. and Ph.D.
+                programs in Environmental Science through a Management Committee composed of:
+              </p>
+              <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 inline-block w-1.5 h-1.5 rounded-full bg-[#0C0B5D] flex-shrink-0" />
+                  <span>
+                    <strong className="text-gray-900">Chairs</strong> of the M.S. EnvSci and Ph.D.
+                    Area of Specialization Committees (AOSCOMs)
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 inline-block w-1.5 h-1.5 rounded-full bg-[#0C0B5D] flex-shrink-0" />
+                  <span>
+                    <strong className="text-gray-900">Two elected members at large</strong>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1.5 inline-block w-1.5 h-1.5 rounded-full bg-[#0C0B5D] flex-shrink-0" />
+                  <span>
+                    The <strong className="text-gray-900">SESAM Dean</strong> as ex-officio member
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative overflow-hidden bg-[#0C0B5D] py-20">
         <div className="absolute inset-0">
