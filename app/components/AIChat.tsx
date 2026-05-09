@@ -65,6 +65,8 @@ interface AIChatProps {
   onEndChatClick?: (sessionId: string) => void;
 }
 
+const MAX_CHAT_QUERY_LENGTH = 500;
+
 const DEFAULT_CONVERSATION_STARTERS: ConversationStarter[] = [
   {
     category: 'Thesis Outline Approval',
@@ -205,12 +207,17 @@ export default function AIChat({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput || loading) return;
+    if (trimmedInput.length > MAX_CHAT_QUERY_LENGTH) {
+      setError(`Questions are limited to ${MAX_CHAT_QUERY_LENGTH} characters.`);
+      return;
+    }
 
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
-      content: input.trim(),
+      content: trimmedInput,
       timestamp: new Date(),
     };
 
@@ -309,7 +316,7 @@ export default function AIChat({
   };
 
   const handleStarterClick = (question: string) => {
-    setInput(question);
+    setInput(question.slice(0, MAX_CHAT_QUERY_LENGTH));
   };
 
   function getDisplayedQuestions(starter: ConversationStarter) {
@@ -529,7 +536,7 @@ export default function AIChat({
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value.slice(0, MAX_CHAT_QUERY_LENGTH))}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -538,6 +545,7 @@ export default function AIChat({
               }}
               placeholder={loading ? 'SINAG is responding…' : inputPlaceholder}
               rows={1}
+              maxLength={MAX_CHAT_QUERY_LENGTH}
               className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder:text-gray-400 outline-none max-h-40 leading-6 py-1.5"
               disabled={loading}
               style={{ minHeight: '24px' }}
@@ -553,9 +561,12 @@ export default function AIChat({
               </svg>
             </button>
           </div>
-          <p className="mt-1.5 text-[10px] text-gray-400 text-center">
-            SINAG can make mistakes. Verify important information with your adviser.
-          </p>
+          <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-gray-400">
+            <span>SINAG can make mistakes. Verify important information with your adviser.</span>
+            <span className={input.length >= MAX_CHAT_QUERY_LENGTH ? 'font-semibold text-red-500' : ''}>
+              {input.length}/{MAX_CHAT_QUERY_LENGTH}
+            </span>
+          </div>
         </div>
       </form>
     </div>
