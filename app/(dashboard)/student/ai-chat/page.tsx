@@ -1,8 +1,73 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { History, MessageSquare, Plus, Sparkles, X } from 'lucide-react';
+import {
+  Award, BookOpen, ClipboardList, FileText,
+  GraduationCap, History, MessageSquare,
+  Plus, Sparkles, Users, X,
+} from 'lucide-react';
 import AIChat, { ChatMessage } from '@/app/components/AIChat';
+import type { ConversationStarter, RoleBadge } from '@/app/components/AIChat';
+import RatingModal from '@/app/components/RatingModal';
+
+const STUDENT_ROLE_BADGE: RoleBadge = {
+  label: 'Student',
+  icon: GraduationCap,
+  color: 'text-blue-700',
+  bgColor: 'bg-blue-50',
+  borderColor: 'border-blue-200',
+};
+
+const STUDENT_STARTERS: ConversationStarter[] = [
+  {
+    category: 'Admission & Enrollment',
+    icon: ClipboardList,
+    color: 'text-teal-700',
+    bgColor: 'bg-teal-50',
+    borderColor: 'border-teal-200',
+    questions: ['What are the SESAM graduate admission requirements?'],
+  },
+  {
+    category: 'Thesis Process',
+    icon: FileText,
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    questions: ['What forms do I need for thesis outline approval?'],
+  },
+  {
+    category: 'Manuscript Formatting',
+    icon: BookOpen,
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    questions: ['What are the UPLB Graduate School formatting requirements?'],
+  },
+  {
+    category: 'Defense Requirements',
+    icon: GraduationCap,
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
+    questions: ['When can I schedule my thesis defense?'],
+  },
+  {
+    category: 'Research Ethics',
+    icon: Users,
+    color: 'text-indigo-700',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+    questions: ['Do I need UPLB REB approval for my research?'],
+  },
+  {
+    category: 'Publishing in JESAM',
+    icon: Award,
+    color: 'text-red-700',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+    questions: ['What are the JESAM submission requirements?'],
+  },
+];
 
 interface QueryHistoryItem {
   _id: string;
@@ -38,6 +103,7 @@ export default function StudentAIChatPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [chatKey, setChatKey] = useState(0);
+  const [ratingSessionId, setRatingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -80,24 +146,13 @@ export default function StudentAIChatPage() {
 
   const activeMessages = useMemo<ChatMessage[]>(() => {
     if (activeSessionId === null) return [];
-    const sessionQueries = history
+    return history
       .filter((q) => (q.sessionId || q._id) === activeSessionId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    return sessionQueries.flatMap((item) => [
-      {
-        id: `${item._id}-q`,
-        role: 'user' as const,
-        content: item.query,
-        timestamp: new Date(item.createdAt),
-      },
-      {
-        id: `${item._id}-a`,
-        role: 'assistant' as const,
-        content: item.response,
-        timestamp: new Date(item.createdAt),
-        sources: item.sources,
-      },
-    ]);
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .flatMap((item) => [
+        { id: `${item._id}-q`, role: 'user' as const, content: item.query, timestamp: new Date(item.createdAt) },
+        { id: `${item._id}-a`, role: 'assistant' as const, content: item.response, timestamp: new Date(item.createdAt), sources: item.sources },
+      ]);
   }, [activeSessionId, history]);
 
   const handleNewChat = () => {
@@ -112,72 +167,64 @@ export default function StudentAIChatPage() {
     setShowSidebar(false);
   };
 
+  const handleEndChat = (sessionId: string) => setRatingSessionId(sessionId);
+
+  const handleRatingDone = () => {
+    setRatingSessionId(null);
+    handleNewChat();
+  };
+
   return (
     <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-gray-50">
+      {/* Rating modal */}
+      {ratingSessionId && (
+        <RatingModal
+          sessionId={ratingSessionId}
+          onClose={() => { setRatingSessionId(null); handleNewChat(); }}
+          onSubmitted={handleRatingDone}
+        />
+      )}
+
       {/* History Sidebar */}
-      <div
-        className={`${
-          showSidebar ? 'w-72' : 'w-0'
-        } transition-all duration-300 overflow-hidden flex-shrink-0 bg-white border-r border-gray-200 flex flex-col`}
-      >
+      <div className={`${showSidebar ? 'w-72' : 'w-0'} transition-all duration-300 overflow-hidden flex-shrink-0 bg-white border-r border-gray-200 flex flex-col`}>
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-gray-900">Conversation History</h2>
-            <button
-              onClick={() => setShowSidebar(false)}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-            >
+            <button onClick={() => setShowSidebar(false)} className="p-1 hover:bg-gray-100 rounded transition-colors">
               <X className="w-4 h-4 text-gray-500" />
             </button>
           </div>
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#0C0B5D] text-white rounded-lg hover:bg-[#0a0949] transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            New Conversation
+          <button onClick={handleNewChat} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#0C0B5D] text-white rounded-lg hover:bg-[#0a0949] transition-colors text-sm font-medium">
+            <Plus className="w-4 h-4" /> New Conversation
           </button>
         </div>
-
         <div className="flex-1 overflow-y-auto">
           {loadingHistory ? (
             <div className="p-4 text-xs text-gray-500">Loading history...</div>
           ) : sessions.length === 0 ? (
             <div className="p-4 text-xs text-gray-500">No past conversations yet.</div>
-          ) : (
-            sessions.map((session) => (
-              <button
-                key={session.sessionId}
-                onClick={() => handleSelectSession(session.sessionId)}
-                className={`w-full p-4 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors ${
-                  activeSessionId === session.sessionId ? 'bg-blue-50 border-l-2 border-l-[#0C0B5D]' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 mb-0.5 truncate font-medium">{session.title}</p>
-                    <p className="text-xs text-gray-500 mb-0.5">{formatSessionDate(session.date)}</p>
-                    <p className="text-xs text-gray-400 truncate">{session.lastMessage}</p>
-                    <p className="text-xs text-gray-400 mt-1">{session.messageCount} messages</p>
-                  </div>
+          ) : sessions.map((session) => (
+            <button key={session.sessionId} onClick={() => handleSelectSession(session.sessionId)}
+              className={`w-full p-4 text-left hover:bg-gray-50 border-b border-gray-100 transition-colors ${activeSessionId === session.sessionId ? 'bg-blue-50 border-l-2 border-l-[#0C0B5D]' : ''}`}>
+              <div className="flex items-start gap-3">
+                <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900 mb-0.5 truncate font-medium">{session.title}</p>
+                  <p className="text-xs text-gray-500 mb-0.5">{formatSessionDate(session.date)}</p>
+                  <p className="text-xs text-gray-400 truncate">{session.lastMessage}</p>
+                  <p className="text-xs text-gray-400 mt-1">{session.messageCount} messages</p>
                 </div>
-              </button>
-            ))
-          )}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Main Area */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowSidebar(!showSidebar)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Toggle history"
-            >
+            <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Toggle history">
               <History className="w-5 h-5 text-gray-600" />
             </button>
             <div className="flex items-center gap-2.5">
@@ -186,36 +233,37 @@ export default function StudentAIChatPage() {
               </div>
               <div>
                 <h1 className="text-base font-semibold text-[#0C0B5D] leading-tight">SINAG AI Research Assistant</h1>
-                <p className="text-xs text-gray-500">SESAM Intelligent Natural-language Advising Guide</p>
+                <p className="text-xs text-gray-500">Your thesis companion — forms, formatting, ethics, defense, and JESAM</p>
               </div>
             </div>
           </div>
           {activeSessionId !== null && (
-            <button
-              onClick={handleNewChat}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              New Chat
+            <button onClick={handleNewChat} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+              <Plus className="w-4 h-4" /> New Chat
             </button>
           )}
         </div>
 
-        {/* Chat */}
         <div className="flex-1 min-h-0 p-3 sm:p-4">
           {loadingHistory ? (
             <div className="flex h-full items-center justify-center rounded-xl border border-gray-200 bg-white text-sm text-gray-500 shadow-sm">
               Loading previous conversations...
             </div>
           ) : historyError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {historyError}
-            </div>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{historyError}</div>
           ) : (
             <AIChat
               key={`${activeSessionId ?? 'new'}-${chatKey}`}
               initialMessages={activeMessages}
               sessionId={activeSessionId ?? undefined}
+              conversationStarters={STUDENT_STARTERS}
+              starterDisplayMode="chips"
+              welcomeDescription="Ask about admission, your thesis journey, required forms, formatting, defense, or publishing in JESAM. I'll cite SESAM docs — advisory only."
+              showCapabilityBadges={false}
+              inputPlaceholder="Ask about admission, thesis forms, defense, formatting, or JESAM…"
+              tipText="Be specific about your program (MS/PhD) and current stage. All replies are advisory — always confirm with your adviser."
+              roleBadge={STUDENT_ROLE_BADGE}
+              onEndChatClick={handleEndChat}
             />
           )}
         </div>

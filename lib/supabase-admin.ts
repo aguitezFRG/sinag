@@ -1,16 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
-}
-
-if (!supabaseServiceRoleKey) {
-  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY fallback)');
-}
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 function decodeJwtPayload(token: string): { role?: string } | null {
   const parts = token.split('.');
@@ -24,17 +12,46 @@ function decodeJwtPayload(token: string): { role?: string } | null {
   }
 }
 
-const keyPayload = decodeJwtPayload(supabaseServiceRoleKey);
-if (keyPayload?.role && keyPayload.role !== 'service_role') {
-  throw new Error(
-    `Invalid Supabase admin key role "${keyPayload.role}". Expected service_role key for server APIs.`
-  );
+let cachedClient: SupabaseClient | null = null;
+
+function getSupabaseAdmin(): SupabaseClient {
+  if (cachedClient) return cachedClient;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+  }
+  if (!supabaseServiceRoleKey) {
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY fallback)');
+  }
+
+  const keyPayload = decodeJwtPayload(supabaseServiceRoleKey);
+  if (keyPayload?.role && keyPayload.role !== 'service_role') {
+    throw new Error(
+      `Invalid Supabase admin key role "${keyPayload.role}". Expected service_role key for server APIs.`
+    );
+  }
+
+  cachedClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+  return cachedClient;
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
+// Proxy lets all existing `supabaseAdmin.from(...)` calls work unchanged,
+// while deferring client creation (and env-var validation) until first use
+// at request time — not module-eval time, which runs during `next build`.
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(_target, prop, receiver) {
+    const client = getSupabaseAdmin();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === 'function' ? value.bind(client) : value;
   },
 });
 

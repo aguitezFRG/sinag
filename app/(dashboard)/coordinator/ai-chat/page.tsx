@@ -1,96 +1,96 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Award, BookOpen, Calendar, FileText, GraduationCap, History, MessageSquare, Plus, Sparkles, Users, X } from 'lucide-react';
+import { BarChart, BookOpen, Calendar, ClipboardList, FileText, GraduationCap, History, MessageSquare, Plus, Sparkles, Users, X } from 'lucide-react';
 import AIChat, { ChatMessage } from '@/app/components/AIChat';
 import type { ConversationStarter, RoleBadge } from '@/app/components/AIChat';
 import RatingModal from '@/app/components/RatingModal';
 
-const ADVISER_ROLE_BADGE: RoleBadge = {
-  label: 'Adviser',
-  icon: BookOpen,
-  color: 'text-purple-700',
-  bgColor: 'bg-purple-50',
-  borderColor: 'border-purple-200',
+const COORDINATOR_ROLE_BADGE: RoleBadge = {
+  label: 'SESAM Coordinator',
+  icon: ClipboardList,
+  color: 'text-teal-700',
+  bgColor: 'bg-teal-50',
+  borderColor: 'border-teal-200',
 };
 
-const ADVISER_STARTERS: ConversationStarter[] = [
+const COORDINATOR_STARTERS: ConversationStarter[] = [
   {
-    category: 'Advising Policies & Forms',
-    icon: FileText,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    questions: [
-      'What are the SESAM adviser responsibilities?',
-      'Where can I find the student-adviser agreement form?',
-      'Forms required for student defense endorsement',
-      'What is the co-adviser policy at SESAM?',
-    ],
-  },
-  {
-    category: 'Academic Calendar & Deadlines',
-    icon: Calendar,
+    category: 'Enrollment & Admissions',
+    icon: ClipboardList,
     color: 'text-teal-700',
     bgColor: 'bg-teal-50',
     borderColor: 'border-teal-200',
     questions: [
-      'What are the thesis outline submission deadlines?',
-      'Key manuscript submission dates this semester',
-      'Defense scheduling deadlines per semester',
-      'When is the JESAM submission deadline?',
+      'What is the SESAM graduate admission process?',
+      'Enrollment requirements per semester for SESAM students',
+      'Quota and slot availability policies',
+      'Transfer student requirements and procedure',
     ],
   },
   {
-    category: 'Manuscript Review Standards',
-    icon: BookOpen,
+    category: 'Student-Adviser Management',
+    icon: Users,
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    questions: [
+      'Guidelines for assigning advisers to new SESAM students',
+      'When can a student change their adviser?',
+      'Maximum advisee load per faculty adviser',
+      'Co-adviser policies and procedures',
+    ],
+  },
+  {
+    category: 'Degree & Program Requirements',
+    icon: GraduationCap,
     color: 'text-purple-700',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
     questions: [
-      'What formatting standards should I check in a student manuscript?',
-      'Thesis chapter structure requirements for SESAM',
-      'What should I verify before approving a manuscript?',
-      'How do I endorse a student manuscript for defense?',
+      'MS degree requirements at SESAM',
+      'PhD by Research program requirements',
+      'MS comprehensive exam guidelines',
+      'Graduation application deadlines and process',
     ],
   },
   {
-    category: 'Research Ethics & JESAM',
-    icon: Award,
+    category: 'Academic Calendar & Policies',
+    icon: Calendar,
     color: 'text-amber-700',
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
     questions: [
-      'When does student research require UPLB REB approval?',
-      'Research Integrity Declaration requirements',
-      'What are the JESAM reviewer guidelines?',
-      'Publication ethics guidelines for JESAM',
+      'Thesis outline and defense deadlines this semester',
+      'Leave of absence and extension policies',
+      'Credit overload and underload policies',
+      'Residency and maximum stay requirements',
     ],
   },
   {
-    category: 'Student Advisory Process',
-    icon: Users,
-    color: 'text-indigo-700',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
+    category: 'Student Progress Tracking',
+    icon: BarChart,
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200',
     questions: [
-      'What is the process for a student to change their adviser?',
-      'Maximum advisee load per SESAM faculty adviser',
-      'Guidelines for advising MS vs. PhD students',
-      'How do I guide a student through outline to defense?',
+      'What are the thesis workflow stages at SESAM?',
+      'Typical timeline from enrollment to graduation',
+      'Requirements before a student can defend',
+      'How to monitor student academic load and progress',
     ],
   },
   {
-    category: 'Comprehensive Exam & Defense',
-    icon: GraduationCap,
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
+    category: 'JESAM & Research Output',
+    icon: BookOpen,
+    color: 'text-red-700',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
     questions: [
-      'What is the MS comprehensive exam format at SESAM?',
-      'How do I endorse a student for their final defense?',
-      'Defense panel composition requirements',
-      'What happens after a student passes their defense?',
+      'What is the JESAM journal scope and aims?',
+      'Publication requirements before SESAM graduation',
+      'JESAM submission and review timeline',
+      'How to access the JESAM publication archive',
     ],
   },
 ];
@@ -122,7 +122,7 @@ function formatSessionDate(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function AdviserAIChatPage() {
+export default function CoordinatorAIChatPage() {
   const [history, setHistory] = useState<QueryHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -181,18 +181,8 @@ export default function AdviserAIChatPage() {
       ]);
   }, [activeSessionId, history]);
 
-  const handleNewChat = () => {
-    setActiveSessionId(null);
-    setChatKey((k) => k + 1);
-    setShowSidebar(false);
-  };
-
-  const handleSelectSession = (sessionId: string) => {
-    setActiveSessionId(sessionId);
-    setChatKey((k) => k + 1);
-    setShowSidebar(false);
-  };
-
+  const handleNewChat = () => { setActiveSessionId(null); setChatKey((k) => k + 1); setShowSidebar(false); };
+  const handleSelectSession = (sessionId: string) => { setActiveSessionId(sessionId); setChatKey((k) => k + 1); setShowSidebar(false); };
   const handleEndChat = (sessionId: string) => setRatingSessionId(sessionId);
   const handleRatingDone = () => { setRatingSessionId(null); handleNewChat(); };
 
@@ -206,7 +196,6 @@ export default function AdviserAIChatPage() {
         />
       )}
 
-      {/* History Sidebar */}
       <div className={`${showSidebar ? 'w-72' : 'w-0'} transition-all duration-300 overflow-hidden flex-shrink-0 bg-white border-r border-gray-200 flex flex-col`}>
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
@@ -239,7 +228,6 @@ export default function AdviserAIChatPage() {
         </div>
       </div>
 
-      {/* Main Area */}
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -251,8 +239,8 @@ export default function AdviserAIChatPage() {
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-base font-semibold text-[#0C0B5D] leading-tight">SINAG AI Policy Assistant</h1>
-                <p className="text-xs text-gray-500">Advising policies, deadlines, manuscript standards, and JESAM guidelines</p>
+                <h1 className="text-base font-semibold text-[#0C0B5D] leading-tight">SINAG AI Program Assistant</h1>
+                <p className="text-xs text-gray-500">Admissions, degree requirements, adviser management, and SESAM policies</p>
               </div>
             </div>
           </div>
@@ -273,13 +261,13 @@ export default function AdviserAIChatPage() {
               key={`${activeSessionId ?? 'new'}-${chatKey}`}
               initialMessages={activeMessages}
               sessionId={activeSessionId ?? undefined}
-              conversationStarters={ADVISER_STARTERS}
+              conversationStarters={COORDINATOR_STARTERS}
               starterDisplayMode="chips"
-              welcomeDescription="Look up SESAM advising policies, academic deadlines, manuscript review standards, and JESAM publication guidelines. All responses are advisory."
+              welcomeDescription="Query SESAM admissions, degree requirements, student-adviser policies, academic calendar, and JESAM publication standards. Advisory only."
               showCapabilityBadges={false}
-              inputPlaceholder="Ask about advising policies, deadlines, manuscript standards, or JESAM…"
-              tipText="Mention the specific form, process, or semester for the most relevant policy guidance. All replies are advisory."
-              roleBadge={ADVISER_ROLE_BADGE}
+              inputPlaceholder="Ask about admissions, degree requirements, adviser policies, or SESAM procedures…"
+              tipText="Specify the program (MS/PhD) and context for the most accurate policy guidance. All replies are advisory."
+              roleBadge={COORDINATOR_ROLE_BADGE}
               onEndChatClick={handleEndChat}
             />
           )}

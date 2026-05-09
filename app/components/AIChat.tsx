@@ -31,7 +31,7 @@ export interface ChatMessage {
   isStreaming?: boolean;
 }
 
-interface ConversationStarter {
+export interface ConversationStarter {
   category: string;
   icon: React.ElementType;
   color: string;
@@ -40,11 +40,29 @@ interface ConversationStarter {
   questions: string[];
 }
 
+export interface RoleBadge {
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}
+
 interface AIChatProps {
   initialMessages?: ChatMessage[];
   sessionId?: string;
   onSendMessage?: (msg: string) => Promise<{ content: string; sources?: { title: string; type: string; url?: string }[] }>;
   conversationStarters?: ConversationStarter[];
+  /** 'cards' = 2-column card grid; 'chips' = clean 2-col grid (students) */
+  starterDisplayMode?: 'cards' | 'chips';
+  welcomeDescription?: string;
+  showCapabilityBadges?: boolean;
+  inputPlaceholder?: string;
+  tipText?: string;
+  /** Role badge displayed next to the SINAG logo in the welcome screen */
+  roleBadge?: RoleBadge;
+  /** Called with the current sessionId when user clicks "End Chat" */
+  onEndChatClick?: (sessionId: string) => void;
 }
 
 const MAX_CHAT_QUERY_LENGTH = 500;
@@ -135,6 +153,13 @@ export default function AIChat({
   sessionId,
   onSendMessage,
   conversationStarters = DEFAULT_CONVERSATION_STARTERS,
+  starterDisplayMode = 'cards',
+  welcomeDescription = "Ask anything about your thesis — I'll cite SESAM docs and JESAM papers. Advisory only; your adviser has the final word.",
+  showCapabilityBadges = true,
+  inputPlaceholder = 'Ask anything about SESAM — your thesis, forms, ethics, or JESAM papers',
+  tipText = 'Be specific (program, stage, study site). All replies are advisory — confirm with your adviser.',
+  roleBadge,
+  onEndChatClick,
 }: AIChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
@@ -304,118 +329,155 @@ export default function AIChat({
     <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
         {messages.length === 0 ? (
-          <div className="max-w-6xl mx-auto px-6 py-8">
-            {/* Welcome Header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-[#0C0B5D] rounded-2xl flex items-center justify-center shadow-xl mx-auto mb-4 border-4 border-blue-400 relative">
-                <Sparkles className="w-8 h-8 text-white" />
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Zap className="w-3 h-3 text-white" />
-                </div>
-              </div>
-              <div className="mb-2">
-                <h2 className="text-2xl font-bold text-[#0C0B5D] mb-0.5">SINAG</h2>
-                <p className="text-xs text-gray-600 italic font-medium">A SESAM Intelligent Natural-language Advising Guide</p>
-              </div>
-              <p className="text-sm text-gray-700 max-w-xl mx-auto mb-6 leading-relaxed">
-                Ask anything about your thesis — I&apos;ll cite SESAM docs and JESAM papers. Advisory only; your adviser has the final word.
-              </p>
-
-              {/* Capabilities */}
-              <div className="hidden md:grid grid-cols-3 gap-3 max-w-2xl mx-auto">
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-1.5">
-                    <Beaker className="w-4 h-4 text-white" />
+          <div className="max-w-4xl mx-auto px-5 py-6">
+            {/* Compact horizontal welcome header */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5 pb-5 border-b border-gray-100">
+              <div className="flex items-center gap-3 sm:flex-shrink-0">
+                {/* SINAG brand icon */}
+                <div className="w-11 h-11 bg-[#0C0B5D] rounded-xl flex items-center justify-center shadow-md border-2 border-blue-400 relative flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Zap className="w-2.5 h-2.5 text-white" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-xs">Research Design</h3>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                  <div className="w-8 h-8 bg-[#0C0B5D] rounded-lg flex items-center justify-center mx-auto mb-1.5">
-                    <BarChart className="w-4 h-4 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-xs">Data Analysis</h3>
+                {/* Title */}
+                <div>
+                  <h2 className="text-base font-bold text-[#0C0B5D] leading-tight">SINAG</h2>
+                  <p className="text-[10px] text-gray-500 italic leading-tight">SESAM Intelligent Natural-language Advising Guide</p>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-1.5">
-                    <GraduationCap className="w-4 h-4 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-xs">Thesis Writing</h3>
-                </div>
-              </div>
-            </div>
-
-            {/* Conversation Starters */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-yellow-500" />
-                  Try one of these
-                </h2>
-                <p className="text-xs text-gray-500">Click to send</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {conversationStarters.map((starter, idx) => {
-                  const Icon = starter.icon;
+                {/* Role badge — displayed only when a role is provided */}
+                {roleBadge && (() => {
+                  const RoleIcon = roleBadge.icon;
                   return (
-                    <div
-                      key={idx}
-                      className={`bg-white rounded-xl shadow-sm border ${starter.borderColor} p-3.5 hover:shadow-md transition-shadow`}
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className={`${starter.bgColor} p-2 rounded-lg border ${starter.borderColor}`}>
-                          <Icon className={`w-4 h-4 ${starter.color}`} />
-                        </div>
-                        <h3 className="font-semibold text-gray-900 text-xs leading-tight">{starter.category}</h3>
-                      </div>
-                      <div className="space-y-1.5">
-                        {getDisplayedQuestions(starter).map((question, qIdx) => (
-                          <button
-                            key={qIdx}
-                            type="button"
-                            onClick={() => handleStarterClick(question)}
-                            className="w-full text-left p-2 rounded-lg bg-gray-50 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors text-xs text-gray-700 hover:text-blue-900 group"
-                          >
-                            <div className="flex items-start gap-2">
-                              <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
-                              <span className="flex-1 leading-snug">{question}</span>
-                            </div>
-                          </button>
-                        ))}
-                        {starter.questions.length > 2 && selectedCategory !== starter.category && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCategory(starter.category)}
-                            className="w-full text-center p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-all border border-blue-100"
-                          >
-                            <span className="flex items-center justify-center gap-1">
-                              <Plus className="w-3 h-3" />
-                              {starter.questions.length - 2} more
-                            </span>
-                          </button>
-                        )}
-                        {selectedCategory === starter.category && starter.questions.length > 2 && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCategory(null)}
-                            className="w-full text-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-all"
-                          >
-                            <span className="flex items-center justify-center gap-1">
-                              <X className="w-3 h-3" />
-                              Show less
-                            </span>
-                          </button>
-                        )}
-                      </div>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 ${roleBadge.bgColor} border ${roleBadge.borderColor} rounded-full ml-0.5 flex-shrink-0`}>
+                      <RoleIcon className={`w-3.5 h-3.5 ${roleBadge.color} flex-shrink-0`} />
+                      <span className={`text-[11px] font-bold ${roleBadge.color} whitespace-nowrap`}>{roleBadge.label}</span>
                     </div>
                   );
-                })}
+                })()}
               </div>
+              <p className="text-sm text-gray-600 leading-relaxed sm:border-l sm:border-gray-200 sm:pl-4 sm:pt-0.5">
+                {welcomeDescription}
+              </p>
             </div>
+
+            {/* Capability badges (inline pill row) */}
+            {showCapabilityBadges && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-medium text-blue-700">
+                  <Beaker className="w-3 h-3" /> Research Design
+                </span>
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-full text-xs font-medium text-indigo-700">
+                  <BarChart className="w-3 h-3" /> Data Analysis
+                </span>
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs font-medium text-purple-700">
+                  <GraduationCap className="w-3 h-3" /> Thesis Writing
+                </span>
+              </div>
+            )}
+
+            {/* Conversation Starters */}
+            {starterDisplayMode === 'chips' ? (
+              /* Chips mode — 2-column grid, one question per topic (student view) */
+              <div>
+                <p className="text-xs text-gray-500 mb-3">Select a topic or type your question below</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {conversationStarters.map((starter, idx) => {
+                    const Icon = starter.icon;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleStarterClick(starter.questions[0])}
+                        className="w-full text-left flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all group shadow-sm"
+                      >
+                        <div className={`${starter.bgColor} p-1.5 rounded-lg border ${starter.borderColor} flex-shrink-0`}>
+                          <Icon className={`w-3.5 h-3.5 ${starter.color}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">{starter.category}</p>
+                          <p className="text-xs text-gray-700 group-hover:text-[#0C0B5D] leading-snug line-clamp-2">{starter.questions[0]}</p>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#0C0B5D] group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* Cards mode — 2-column grid with expandable question lists (adviser / coordinator) */
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <Lightbulb className="w-3.5 h-3.5 text-yellow-500" />
+                    Try one of these
+                  </h2>
+                  <p className="text-xs text-gray-500">Click to send</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {conversationStarters.map((starter, idx) => {
+                    const Icon = starter.icon;
+                    return (
+                      <div
+                        key={idx}
+                        className={`bg-white rounded-xl shadow-sm border ${starter.borderColor} p-3.5 hover:shadow-md transition-shadow`}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className={`${starter.bgColor} p-2 rounded-lg border ${starter.borderColor}`}>
+                            <Icon className={`w-4 h-4 ${starter.color}`} />
+                          </div>
+                          <h3 className="font-semibold text-gray-900 text-xs leading-tight">{starter.category}</h3>
+                        </div>
+                        <div className="space-y-1.5">
+                          {getDisplayedQuestions(starter).map((question, qIdx) => (
+                            <button
+                              key={qIdx}
+                              type="button"
+                              onClick={() => handleStarterClick(question)}
+                              className="w-full text-left p-2 rounded-lg bg-gray-50 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors text-xs text-gray-700 hover:text-blue-900 group"
+                            >
+                              <div className="flex items-start gap-2">
+                                <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0 mt-0.5 group-hover:translate-x-0.5 transition-transform" />
+                                <span className="flex-1 leading-snug">{question}</span>
+                              </div>
+                            </button>
+                          ))}
+                          {starter.questions.length > 2 && selectedCategory !== starter.category && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCategory(starter.category)}
+                              className="w-full text-center p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-all border border-blue-100"
+                            >
+                              <span className="flex items-center justify-center gap-1">
+                                <Plus className="w-3 h-3" />
+                                {starter.questions.length - 2} more
+                              </span>
+                            </button>
+                          )}
+                          {selectedCategory === starter.category && starter.questions.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCategory(null)}
+                              className="w-full text-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-all"
+                            >
+                              <span className="flex items-center justify-center gap-1">
+                                <X className="w-3 h-3" />
+                                Show less
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Tips */}
             <div className="mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs text-amber-800 flex items-start gap-2">
               <Zap className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-600" />
-              <span><strong>Tip:</strong> Be specific (program, stage, study site). All replies are advisory — confirm with your adviser.</span>
+              <span><strong>Tip:</strong> {tipText}</span>
             </div>
           </div>
         ) : (
@@ -451,6 +513,20 @@ export default function AIChat({
         {messages.length === 0 && <div ref={bottomRef} />}
       </div>
 
+      {/* End Chat strip — visible only when conversation is active */}
+      {onEndChatClick && messages.some((m) => m.role === 'user') && (
+        <div className="border-t border-gray-100 bg-gray-50/60 px-3 py-1.5 sm:px-4 flex justify-end flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => onEndChatClick(stableSessionId)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-red-600 border border-gray-200 hover:border-red-200 rounded-lg hover:bg-red-50 transition-all"
+          >
+            <X className="w-3 h-3" />
+            End Chat
+          </button>
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="border-t border-gray-200 bg-gradient-to-b from-white to-gray-50 px-3 py-3 sm:px-4 sm:py-3 flex-shrink-0"
@@ -467,7 +543,7 @@ export default function AIChat({
                   handleSubmit(e as unknown as React.FormEvent);
                 }
               }}
-              placeholder={loading ? 'SINAG is responding…' : 'Ask anything about SESAM — your thesis, forms, ethics, or JESAM papers'}
+              placeholder={loading ? 'SINAG is responding…' : inputPlaceholder}
               rows={1}
               maxLength={MAX_CHAT_QUERY_LENGTH}
               className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder:text-gray-400 outline-none max-h-40 leading-6 py-1.5"

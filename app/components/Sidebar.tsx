@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { UserRole } from '@/app/hooks/useAuth';
 import {
+  BarChart2,
   Home,
   MessageSquare,
   X,
@@ -28,9 +29,11 @@ const navItems: NavItem[] = [
 
   /* Coordinator */
   { label: 'Dashboard', href: '/coordinator', icon: <Home className="w-5 h-5" />, roles: ['coordinator'] },
+  { label: 'AI Consultation', href: '/coordinator/ai-chat', icon: <MessageSquare className="w-5 h-5" />, roles: ['coordinator'] },
 
   /* Admin */
   { label: 'Dashboard', href: '/admin', icon: <Home className="w-5 h-5" />, roles: ['admin'] },
+  { label: 'Chat Analytics', href: '/admin/chat-analytics', icon: <BarChart2 className="w-5 h-5" />, roles: ['admin'] },
 ];
 
 interface SidebarProps {

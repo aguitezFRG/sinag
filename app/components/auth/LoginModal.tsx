@@ -54,12 +54,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   };
 
-  const handleSSOLogin = () => {
-    // For demo purposes, navigate to student dashboard
-    // In production, this would redirect to UPLB SSO
-    router.push('/student');
-  };
-
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !loading) {
       onClose();
@@ -105,28 +99,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6">
-            {/* SSO Button */}
-            <button
-              onClick={handleSSOLogin}
-              disabled={loading}
-              className="w-full bg-[#0C0B5D] text-white py-3 rounded-xl hover:bg-[#0a0949] transition-colors mb-4 font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
-              </svg>
-              Sign in with UPLB SSO
-            </button>
-
-            {/* Divider */}
-            <div className="relative mb-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-3 bg-white text-gray-500 font-medium">Or continue with</span>
-              </div>
-            </div>
-
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
