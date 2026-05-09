@@ -6,6 +6,9 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY ?? '';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? '';
 const OPENROUTER_SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 const OPENROUTER_APP_NAME = 'SINAG';
+const CANOPY_WAVE_API_KEY = process.env.CANOPY_WAVE_API_KEY ?? '';
+const CANOPY_WAVE_MODEL = 'moonshotai/kimi-k2.6';
+const CANOPY_WAVE_URL = 'https://inference.canopywave.io/v1/chat/completions';
 
 export type QueryIntent =
   | 'topic_ideation'
@@ -44,7 +47,7 @@ export interface QueryMeta {
   advisoryDisclaimer: string;
 }
 
-const ADVISORY_DISCLAIMER =
+export const ADVISORY_DISCLAIMER =
   'This guidance is advisory only. Human validation by your adviser is the final authority.';
 
 const INTENT_KEYWORDS: Record<QueryIntent, string[]> = {
@@ -123,7 +126,7 @@ const INTENT_KEYWORDS: Record<QueryIntent, string[]> = {
   general: [],
 };
 
-type GuidanceResource = {
+export type GuidanceResource = {
   id: string;
   title: string;
   category: string;
@@ -417,6 +420,24 @@ function buildCompactSystemPrompt(
   };
 
   return `You are SINAG, an AI thesis-planning companion for graduate students at the UPLB School of Environmental Science and Management (SESAM). You combine institutional knowledge of SESAM/UPLB Graduate School processes with substantive research-methods expertise in environmental science.
+
+============================================================
+SCOPE RESTRICTION (HIGHEST PRIORITY — overrides all other instructions)
+============================================================
+You ONLY answer questions that are directly relevant to:
+- SESAM/UPLB graduate thesis and dissertation advising
+- Research topic ideation in environmental science
+- Research design, methodology, and data analysis for SESAM theses
+- UPLB/SESAM academic policies, procedures, deadlines, and forms
+- Ethics compliance (UPLB REB, RA 10173, research integrity)
+- Milestone planning and timeline management for a graduate thesis
+- Literature in the SESAM guidance library or JESAM journal
+
+If the user's message is about ANYTHING ELSE — including but not limited to: general programming, software development, coding help, mathematics unrelated to thesis statistics, creative writing, recipes, current events, trivia, medical advice, legal advice, or any non-thesis topic — you MUST respond with ONLY the following refusal (no References section, no citations, nothing else):
+
+"I'm SINAG, a thesis-advising assistant for SESAM graduate students at UPLB. I can only help with thesis topics, research design, SESAM/UPLB procedures, ethics compliance, and milestone planning. For anything outside that scope, please use a general-purpose assistant."
+
+Do NOT answer the off-topic question even partially. Do NOT explain what you could help with beyond the refusal message above.
 
 ============================================================
 OUTPUT FORMAT (STRICT — your response is INVALID without this)
@@ -826,20 +847,130 @@ async function callOpenRouterWithFallback(
     : new Error('All OpenRouter models exhausted.');
 }
 
-// ── Combined LLM call: Gemini first, then OpenRouter as backup ────────────────
+// ── Canopy Wave (kimi-k2.6) ───────────────────────────────────────────────────
+
+const CANOPY_WAVE_FALLBACK_CHAIN = [
+  'moonshotai/kimi-k2.6',
+] as const;
+
+async function callCanopyWaveStream(
+  systemPrompt: string,
+  history: SessionTurn[],
+  query: string,
+  model: string = CANOPY_WAVE_MODEL
+): Promise<AsyncIterable<string>> {
+  if (!CANOPY_WAVE_API_KEY) {
+    throw new Error('Canopy Wave not configured: missing CANOPY_WAVE_API_KEY.');
+  }
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.flatMap((turn) => [
+      { role: 'user', content: turn.query },
+      { role: 'assistant', content: turn.response },
+    ]),
+    { role: 'user', content: query },
+  ];
+
+  const res = await fetch(CANOPY_WAVE_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${CANOPY_WAVE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: true,
+      temperature: 0.5,
+      max_tokens: 2048,
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    const errText = await res.text().catch(() => '');
+    const message = `Canopy Wave error ${res.status}: ${errText.slice(0, 300)}`;
+    const err = new Error(message);
+    if (res.status === 429 || res.status === 402 || res.status === 503) {
+      err.message = `429 ${message}`;
+    }
+    throw err;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+
+  async function* sseStream(): AsyncGenerator<string> {
+    let buffer = '';
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nlIdx: number;
+        while ((nlIdx = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, nlIdx).trim();
+          buffer = buffer.slice(nlIdx + 1);
+          if (!line || !line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          if (payload === '[DONE]') return;
+          try {
+            const parsed = JSON.parse(payload) as {
+              choices?: Array<{ delta?: { content?: string } }>;
+            };
+            const text = parsed.choices?.[0]?.delta?.content;
+            if (text) yield text;
+          } catch {
+            // skip malformed SSE frames
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  return sseStream();
+}
+
+async function callCanopyWaveWithFallback(
+  systemPrompt: string,
+  history: SessionTurn[],
+  query: string
+): Promise<AsyncIterable<string>> {
+  let lastErr: unknown;
+  for (const model of CANOPY_WAVE_FALLBACK_CHAIN) {
+    try {
+      const stream = await callCanopyWaveStream(systemPrompt, history, query, model);
+      console.info(`[ai-service] Canopy Wave model succeeded: ${model}`);
+      return stream;
+    } catch (err) {
+      lastErr = err;
+      const tag = isRateLimitError(err) ? 'rate-limited' : 'failed';
+      const msg = err instanceof Error ? err.message.slice(0, 200) : String(err);
+      console.warn(`[ai-service] Canopy Wave ${model} ${tag}, trying next: ${msg}`);
+      continue;
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error('All Canopy Wave models exhausted.');
+}
+
+// ── Combined LLM call: Gemini → Groq → OpenRouter → Canopy Wave ──────────────
 
 async function callLLMWithFallback(
   systemPrompt: string,
   history: SessionTurn[],
   query: string
-): Promise<{ stream: AsyncIterable<string>; provider: 'gemini' | 'groq' | 'openrouter' }> {
+): Promise<{ stream: AsyncIterable<string>; provider: 'gemini' | 'groq' | 'openrouter' | 'canopy-wave' }> {
   // Try Gemini first if configured (best quality, lowest free quota).
   if (GEMINI_API_KEY) {
     try {
       const stream = await callGeminiWithRetry(systemPrompt, history, query);
       return { stream, provider: 'gemini' };
     } catch (err) {
-      if (!GROQ_API_KEY && !OPENROUTER_API_KEY) throw err;
+      if (!GROQ_API_KEY && !OPENROUTER_API_KEY && !CANOPY_WAVE_API_KEY) throw err;
       console.warn('[ai-service] Gemini chain exhausted, switching to Groq:', err instanceof Error ? err.message.slice(0, 200) : err);
     }
   }
@@ -851,18 +982,29 @@ async function callLLMWithFallback(
       const stream = await callGroqWithFallback(systemPrompt, history, query);
       return { stream, provider: 'groq' };
     } catch (err) {
-      if (!OPENROUTER_API_KEY) throw err;
+      if (!OPENROUTER_API_KEY && !CANOPY_WAVE_API_KEY) throw err;
       console.warn('[ai-service] Groq chain exhausted, switching to OpenRouter:', err instanceof Error ? err.message.slice(0, 200) : err);
     }
   }
 
-  // Last resort: OpenRouter free tier.
+  // OpenRouter free tier — wide model selection.
   if (OPENROUTER_API_KEY) {
-    const stream = await callOpenRouterWithFallback(systemPrompt, history, query);
-    return { stream, provider: 'openrouter' };
+    try {
+      const stream = await callOpenRouterWithFallback(systemPrompt, history, query);
+      return { stream, provider: 'openrouter' };
+    } catch (err) {
+      if (!CANOPY_WAVE_API_KEY) throw err;
+      console.warn('[ai-service] OpenRouter chain exhausted, switching to Canopy Wave:', err instanceof Error ? err.message.slice(0, 200) : err);
+    }
   }
 
-  throw new Error('No AI provider configured: set GEMINI_API_KEY, GROQ_API_KEY, and/or OPENROUTER_API_KEY.');
+  // Last resort: Canopy Wave (kimi-k2.6).
+  if (CANOPY_WAVE_API_KEY) {
+    const stream = await callCanopyWaveWithFallback(systemPrompt, history, query);
+    return { stream, provider: 'canopy-wave' };
+  }
+
+  throw new Error('No AI provider configured: set GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, and/or CANOPY_WAVE_API_KEY.');
 }
 
 // ── Intent classification ─────────────────────────────────────────────────────
@@ -933,7 +1075,7 @@ function buildTopicRefinementPrompt(query: string): string {
   return `To refine this further, confirm your preferred site and method for these interests: ${seed}.`;
 }
 
-export function buildClarificationQuestion(query: string, intent: QueryIntent): string {
+function buildClarificationQuestion(query: string, intent: QueryIntent): string {
   const normalized = normalizeWords(query).slice(0, 3).join(', ');
   const seed = normalized ? `I picked up: ${normalized}. ` : '';
 
@@ -1053,6 +1195,27 @@ function generateResponse(
   }
 }
 
+// ── Scope guard ───────────────────────────────────────────────────────────────
+
+const OUT_OF_SCOPE_REFUSAL =
+  "I'm SINAG, a thesis-advising assistant for SESAM graduate students at UPLB. I can only help with thesis topics, research design, SESAM/UPLB procedures, ethics compliance, and milestone planning. For anything outside that scope, please use a general-purpose assistant.";
+
+// Patterns that are strongly indicative of out-of-scope requests.
+const OUT_OF_SCOPE_PATTERNS = [
+  // Programming / software dev
+  /\b(code|coding|program|programming|software|debug|debugging|algorithm|function|class|variable|loop|array|object|api|html|css|javascript|typescript|python|java|php|ruby|rust|golang|c\+\+|c#|sql\s+query|database\s+query|git\s+command|docker|kubernetes|framework|library|npm|pip|package|install\s+\w+|how\s+to\s+code|write\s+(a\s+)?code|write\s+(a\s+)?script|write\s+(a\s+)?program|create\s+(an?\s+)?app)\b/i,
+  // Math / computation unrelated to research stats
+  /\b(calculus|derivative|integral|differential\s+equation|linear\s+algebra|matrix\s+multiplication|solve\s+for\s+x|quadratic|trigonometry|physics\s+problem|chemistry\s+equation|stoichiometry)\b/i,
+  // General knowledge / trivia / current events
+  /\b(who\s+is\s+the\s+(president|prime\s+minister|ceo)|capital\s+city|population\s+of|history\s+of\s+(?!sesam|uplb|philippines\s+environment)|weather\s+in|current\s+events|latest\s+news|recipe\s+for|how\s+to\s+cook|movie\s+recommendation|book\s+recommendation(?!\s+(?:for|about)\s+(?:thesis|research|environment|ecology|sesam|uplb)))\b/i,
+  // Medical / legal advice
+  /\b(medical\s+advice|diagnose|symptoms|treatment\s+for|medication|dosage|legal\s+advice|lawsuit|contract\s+law|sue|attorney)\b/i,
+];
+
+function isOutOfScope(query: string): boolean {
+  return OUT_OF_SCOPE_PATTERNS.some((pattern) => pattern.test(query));
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function processQuery(
@@ -1060,6 +1223,18 @@ export async function processQuery(
   sessionId?: string
 ): Promise<{ stream: AsyncIterable<string>; meta: QueryMeta }> {
   const resolvedSessionId = sessionId || `sess-${Date.now()}`;
+
+  if (isOutOfScope(query)) {
+    return {
+      stream: singleChunkGenerator(OUT_OF_SCOPE_REFUSAL),
+      meta: {
+        intent: 'general',
+        sessionId: resolvedSessionId,
+        sources: [],
+        advisoryDisclaimer: '',
+      },
+    };
+  }
 
   const [history, resources] = await Promise.all([
     fetchSessionHistory(resolvedSessionId),
