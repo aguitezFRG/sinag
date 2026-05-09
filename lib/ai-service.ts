@@ -132,6 +132,7 @@ export type GuidanceResource = {
   category: string;
   content: string;
   file_url: string | null;
+  source_url?: string | null;
   tags: string[] | null;
   is_active: boolean;
 };
@@ -189,6 +190,32 @@ const TOPIC_BLUEPRINTS: TopicBlueprint[] = [
   },
 ];
 
+const SESAM_OFFICIAL_SITE = 'https://sesam.uplb.edu.ph/';
+const SESAM_FACULTY_PAGE = 'https://sesam.uplb.edu.ph/faculty/';
+const SESAM_CURRENT_DEAN_NEWS_URL =
+  'https://sesam.uplb.edu.ph/news/sesam-to-host-2nd-international-conference-on-environmental-science/';
+const SESAM_SITE_SEARCH_KEYWORDS = [
+  'faculty',
+  'professor',
+  'professors',
+  'admin',
+  'administrator',
+  'administration',
+  'administrative',
+  'dean',
+  'associate dean',
+  'staff',
+  'office',
+  'official',
+  'contact',
+  'email',
+  'phone',
+  'directory',
+  'organization',
+  'organizational',
+  'chancellor',
+];
+
 // ── Resource retrieval ────────────────────────────────────────────────────────
 
 // Common stopwords + chat-noise tokens that cause garbage tag/FTS matches.
@@ -223,6 +250,182 @@ function classifyQueryIntent(query: string): 'procedural' | 'research' | 'genera
   return 'general';
 }
 
+function shouldSearchOfficialSesamSite(query: string): boolean {
+  const q = query.toLowerCase();
+  return SESAM_SITE_SEARCH_KEYWORDS.some((keyword) => q.includes(keyword));
+}
+
+function isSesamPeopleQuery(query: string): boolean {
+  return shouldSearchOfficialSesamSite(query);
+}
+
+function isSesamDeanQuery(query: string): boolean {
+  return /\b(dean|deanship|oic[-\s]?dean)\b/i.test(query);
+}
+
+function decodeHtml(input: string): string {
+  return input
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ');
+}
+
+function stripHtml(input: string): string {
+  return decodeHtml(input.replace(/<[^>]*>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractDuckDuckGoTargetUrl(href: string): string | null {
+  const decodedHref = decodeHtml(href);
+  const absolute = decodedHref.startsWith('//')
+    ? `https:${decodedHref}`
+    : decodedHref.startsWith('/')
+      ? `https://duckduckgo.com${decodedHref}`
+      : decodedHref;
+
+  try {
+    const url = new URL(absolute);
+    const target = url.searchParams.get('uddg');
+    if (!target) return null;
+    const targetUrl = new URL(target);
+    if (!/(^|\.)sesam\.uplb\.edu\.ph$/i.test(targetUrl.hostname)) return null;
+    targetUrl.hostname = 'sesam.uplb.edu.ph';
+    return targetUrl.toString();
+  } catch {
+    return null;
+  }
+}
+
+function seededOfficialSesamResources(query: string): GuidanceResource[] {
+  const resources: GuidanceResource[] = [];
+
+  if (isSesamDeanQuery(query)) {
+    resources.push({
+      id: 'sesam-official-current-dean-2025',
+      title: 'Back at the helm- Dei Eslava is the new dean of SESAM (Official SESAM Website)',
+      category: 'official_website',
+      content:
+        'Official SESAM News & Updates reported on 29 August 2025 that, during its 1,402nd meeting on 28 August 2025, the University of the Philippines Board of Regents approved the appointment of Dr. Decibel V. Faustino-Eslava as the new dean of SESAM-UPLB. The official item states that Dr. Eslava will serve again for three years until 2028. It also notes that Dr. Mark Dondi M. Arboleda and Dr. Patricia Ann J. Sanchez served as OICs during the transition period.',
+      file_url: null,
+      source_url: SESAM_CURRENT_DEAN_NEWS_URL,
+      tags: ['sesam', 'official website', 'dean', 'current dean', 'administration'],
+      is_active: true,
+    });
+  }
+
+  if (isSesamPeopleQuery(query)) {
+    resources.push({
+      id: 'sesam-official-faculty-directory',
+      title: 'Faculty - SESAM (Official SESAM Website)',
+      category: 'official_website',
+      content:
+        'The official SESAM faculty directory is the canonical SESAM website page for faculty details, including faculty names and administrative roles shown in the People section. Use this direct page for confirmation of faculty and dean details when answering SESAM people-related questions.',
+      file_url: null,
+      source_url: SESAM_FACULTY_PAGE,
+      tags: ['sesam', 'official website', 'faculty', 'admin', 'dean', 'directory'],
+      is_active: true,
+    });
+  }
+
+  return resources;
+}
+
+async function searchOfficialSesamWebsite(query: string): Promise<GuidanceResource[]> {
+  if (!shouldSearchOfficialSesamSite(query)) return [];
+
+  const searchQuery = isSesamDeanQuery(query)
+    ? `site:sesam.uplb.edu.ph "new dean" "SESAM" "2025" OR "current dean"`
+    : `site:sesam.uplb.edu.ph ${query}`;
+  const url = `https://duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}&kl=ph-en`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          `Mozilla/5.0 (compatible; SINAG/1.0; +${SESAM_OFFICIAL_SITE})`,
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      console.warn(`[ai-service] SESAM site search failed: ${response.status}`);
+      return [];
+    }
+
+    const html = await response.text();
+    const blocks = html.match(/<div class="result[\s\S]*?<div class="clear"><\/div>\s*<\/div>\s*<\/div>/g) ?? [];
+    const resources: GuidanceResource[] = [];
+    const seenUrls = new Set<string>();
+
+    for (const block of blocks) {
+      const titleMatch = block.match(/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+      const snippetMatch = block.match(/<a[^>]*class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+      if (!titleMatch) continue;
+
+      const targetUrl = extractDuckDuckGoTargetUrl(titleMatch[1]);
+      if (!targetUrl || seenUrls.has(targetUrl)) continue;
+
+      const title = stripHtml(titleMatch[2]);
+      const snippet = snippetMatch ? stripHtml(snippetMatch[1]) : '';
+      if (!title || !snippet) continue;
+
+      seenUrls.add(targetUrl);
+      resources.push({
+        id: `sesam-site-${resources.length + 1}-${Buffer.from(targetUrl).toString('base64url').slice(0, 10)}`,
+        title: `${title} (Official SESAM Website)`,
+        category: 'official_website',
+        content: `${snippet}\n\nOfficial SESAM page: ${targetUrl}`,
+        file_url: null,
+        source_url: targetUrl,
+        tags: ['sesam', 'official website', 'faculty', 'admin', 'dean'],
+        is_active: true,
+      });
+
+      if (resources.length >= 3) break;
+    }
+
+    return resources;
+  } catch (error) {
+    console.warn(
+      '[ai-service] SESAM site search unavailable:',
+      error instanceof Error ? error.message : error,
+    );
+    return [];
+  }
+}
+
+function rankSesamPeopleSources(resources: GuidanceResource[], query: string): GuidanceResource[] {
+  if (!isSesamPeopleQuery(query)) return resources;
+
+  return [...resources].sort((a, b) => {
+    const score = (resource: GuidanceResource) => {
+      let value = 0;
+      if (resource.category === 'official_website') value += 100;
+      if (resource.source_url === SESAM_CURRENT_DEAN_NEWS_URL) value += 60;
+      if (resource.source_url === SESAM_FACULTY_PAGE) value += 40;
+      if (
+        isSesamDeanQuery(query) &&
+        /\b(new|current)\s+dean|current-dean|dean\b/i.test(
+          `${resource.title} ${resource.content}`,
+        )
+      ) {
+        value += 30;
+      }
+      const content = resource.content.toLowerCase();
+      if (content.includes('until 2028')) value += 20;
+      if (content.includes('oic')) value -= 5;
+      return value;
+    };
+
+    return score(b) - score(a);
+  });
+}
+
 async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
   const intent = classifyQueryIntent(query);
   const rawWords = query
@@ -237,6 +440,8 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
   const push = (rows: GuidanceResource[] | null) => {
     for (const r of rows ?? []) if (!seen.has(r.id)) seen.set(r.id, r);
   };
+
+  push(seededOfficialSesamResources(query));
 
   // 1) FTS over title+content (only when we have meaningful keywords)
   if (sanitized) {
@@ -296,6 +501,10 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
     }
   }
 
+  for (const resource of await searchOfficialSesamWebsite(query)) {
+    if (!seen.has(resource.id)) seen.set(resource.id, resource);
+  }
+
   // Filter out garbage-titled entries (e.g. titles that are just "1", "2" or
   // shorter than 4 chars) — they're useless to cite.
   const isUsableTitle = (t: string) => t && t.trim().length >= 4 && !/^\d+$/.test(t.trim());
@@ -303,14 +512,25 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
   // Rank by intent
   const out = Array.from(seen.values()).filter((r) => isUsableTitle(r.title));
   if (intent === 'research') {
-    out.sort((a, b) => {
+    const ranked = rankSesamPeopleSources(out, query);
+    ranked.sort((a, b) => {
       const ja = (a.tags ?? []).some((t) => t.toLowerCase() === 'jesam') ? 1 : 0;
       const jb = (b.tags ?? []).some((t) => t.toLowerCase() === 'jesam') ? 1 : 0;
+      if (isSesamPeopleQuery(query) && a.category !== b.category) {
+        if (a.category === 'official_website') return -1;
+        if (b.category === 'official_website') return 1;
+      }
       return jb - ja;
     });
+    return ranked.slice(0, 5);
   } else if (intent === 'procedural') {
     const isFormatQ = /\b(format|formatting|margin|font|spacing|citation|reference style|chapter|appendix)\b/i.test(query);
-    out.sort((a, b) => {
+    const ranked = rankSesamPeopleSources(out, query);
+    ranked.sort((a, b) => {
+      if (isSesamPeopleQuery(query) && a.category !== b.category) {
+        if (a.category === 'official_website') return -1;
+        if (b.category === 'official_website') return 1;
+      }
       const ja = (a.tags ?? []).some((t) => t.toLowerCase() === 'jesam') ? 1 : 0;
       const jb = (b.tags ?? []).some((t) => t.toLowerCase() === 'jesam') ? 1 : 0;
       if (ja !== jb) return ja - jb; // non-JESAM first
@@ -327,9 +547,9 @@ async function fetchResourcesByFTS(query: string): Promise<GuidanceResource[]> {
       const order: Record<string, number> = { policy: 0, guideline: 1, checklist: 2, template: 3 };
       return (order[a.category] ?? 9) - (order[b.category] ?? 9);
     });
-    return out.filter((r) => !(r.tags ?? []).some((t) => t.toLowerCase() === 'jesam')).slice(0, 5);
+    return ranked.filter((r) => !(r.tags ?? []).some((t) => t.toLowerCase() === 'jesam')).slice(0, 5);
   }
-  return out.slice(0, 5);
+  return rankSesamPeopleSources(out, query).slice(0, 5);
 }
 
 // ── Session history ───────────────────────────────────────────────────────────
@@ -364,9 +584,14 @@ function buildCompactSystemPrompt(
   const resourceLines = resources
     .map((r) => {
       const excerpt = r.content.slice(0, 350).trimEnd();
-      const url = signedUrls.get(r.id);
+      const url = r.source_url || signedUrls.get(r.id);
       const isJesam = (r.tags ?? []).some((t) => t.toLowerCase() === 'jesam');
-      const tag = isJesam ? ' [JESAM journal article]' : '';
+      const isOfficialWebsite = r.category === 'official_website';
+      const tag = isOfficialWebsite
+        ? ' [official SESAM website search result]'
+        : isJesam
+          ? ' [JESAM journal article]'
+          : '';
       return `- **${r.title}** (${r.category})${tag}: ${excerpt}…${url ? ` [Full doc: ${url}]` : ''}`;
     })
     .join('\n');
@@ -436,6 +661,9 @@ CITATION RULES
 ============================================================
 - Cite ONLY sources you actually drew from. Do NOT cite a document just because it appears in the retrieved list — read its excerpt first.
 - PREFER the RETRIEVED GUIDANCE LIBRARY ENTRIES below when they directly address the question. Use their EXACT title.
+- For current faculty, administrator, dean, or office questions, prefer retrieved entries marked [official SESAM website search result] over older PDFs when they directly match.
+- Official SESAM website search-result excerpts are snippets, not full-page transcripts. Use them conservatively and tell the user to open the cited official page for final confirmation when names or roles may have changed.
+- If an official SESAM source explicitly states the current/new dean, answer with the dean's name first before adding context.
 - Match topic carefully: do NOT cite a JESAM paper about mangroves for a question about thesis formatting rules.
 - If no retrieved doc fits, cite the standard institutional source by name ("UPLB Graduate School Handbook", "SESAM Graduate Manual", "UPLB Research Ethics Board Guidelines", "RA 10173 Data Privacy Act").
 - Do NOT fabricate URLs, page numbers, DOIs, authors, or document titles.
@@ -1204,7 +1432,7 @@ export async function processQuery(
   const signedUrls = new Map<string, string>();
   await Promise.all(
     resources
-      .filter((r) => r.file_url)
+      .filter((r) => r.file_url && !/^https?:\/\//i.test(r.file_url))
       .map(async (r) => {
         const url = await getGuidanceSignedUrl(r.file_url!);
         if (url) signedUrls.set(r.id, url);
@@ -1227,7 +1455,7 @@ export async function processQuery(
   const sources: MatchedSource[] = resources.map((r) => ({
     title: r.title,
     type: r.category,
-    url: signedUrls.get(r.id) || r.file_url || '',
+    url: r.source_url || signedUrls.get(r.id) || r.file_url || '',
   }));
 
   // Wrap the stream with a safety net: if the model fails to emit a "## References"
@@ -1272,7 +1500,12 @@ async function* enforceReferencesSection(
   // Build a server-side References block from the actual retrieved docs.
   const refs = usableResources.slice(0, 5).map((r, i) => {
     const isJesam = (r.tags ?? []).some((t) => t.toLowerCase() === 'jesam');
-    const typeLabel = isJesam ? 'JESAM journal article' : r.category;
+    const typeLabel =
+      r.category === 'official_website'
+        ? 'official SESAM website'
+        : isJesam
+          ? 'JESAM journal article'
+          : r.category;
     return `[${i + 1}] ${formatResourceTitle(r.title)} — ${typeLabel}`;
   });
 
