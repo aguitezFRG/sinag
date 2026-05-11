@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyPassword, createToken, setAuthCookie } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { toLegacyUser, UserRow } from '@/lib/supabase-mappers';
+import { toLegacyUser, UserRow, formatZodError } from '@/lib/supabase-mappers';
 import { isHttpsRequest, shouldEnforceHttps } from '@/lib/request-security';
 import { decryptAuthEnvelope, isEncryptedEnvelope, isEncryptionRequired, validateAuthCryptoConfig } from '@/lib/auth-crypto';
 import { z } from 'zod';
@@ -27,7 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'HTTPS is required' }, { status: 400 });
     }
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Request body is required' }, { status: 400 });
+    }
     let parsedBody: unknown = body;
     if (isEncryptedEnvelope(body)) {
       parsedBody = decryptAuthEnvelope(body.payload);
@@ -41,8 +46,6 @@ export async function POST(req: NextRequest) {
       .select('id, email, password_hash, role, first_name, last_name, avatar, is_active, created_at, last_login_at')
       .eq('email', data.email.toLowerCase())
       .limit(2);
-
-    const normalizedEmail = data.email.toLowerCase();
 
     if (error) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues }, { status: 400 });
+      return NextResponse.json({ error: formatZodError(error) }, { status: 400 });
     }
     if (error instanceof Error && error.message === 'Invalid encrypted auth payload') {
       return NextResponse.json({ error: 'Invalid encrypted auth payload' }, { status: 400 });

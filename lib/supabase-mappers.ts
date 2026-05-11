@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type UserRole = 'student' | 'adviser' | 'coordinator' | 'admin';
 
 export function isUuid(value: string): boolean {
@@ -18,6 +20,7 @@ export type UserRow = {
 
 export function toLegacyUser(user: UserRow) {
   return {
+    id: user.id,
     _id: user.id,
     email: user.email,
     role: user.role,
@@ -30,4 +33,12 @@ export function toLegacyUser(user: UserRow) {
     createdAt: user.created_at,
     lastLoginAt: user.last_login_at ?? undefined,
   };
+}
+
+/**
+ * Flatten a ZodError into a single human-readable string.
+ * Example output: "email: Invalid email; password: Must be at least 8 characters"
+ */
+export function formatZodError(error: z.ZodError): string {
+  return error.issues.map((issue) => `${issue.path.join('.') || 'input'}: ${issue.message}`).join('; ');
 }

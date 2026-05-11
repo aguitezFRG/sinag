@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
 import { hashPassword, verifyPassword } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { formatZodError } from '@/lib/supabase-mappers';
 import { z } from 'zod';
 
 const changePasswordSchema = z
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: error.issues }, { status: 400 });
+        return NextResponse.json({ error: formatZodError(error) }, { status: 400 });
       }
       return NextResponse.json({ error: 'Failed to change password' }, { status: 500 });
     }
