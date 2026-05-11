@@ -72,7 +72,11 @@ export async function GET(req: NextRequest) {
     async (_req, auth) => {
       try {
         if (!isUuid(auth.userId)) {
-          return NextResponse.json({ error: 'Adviser profile not found' }, { status: 404 });
+          return NextResponse.json({
+            reviews: [],
+            summary: { totalPending: 0, submittedCount: 0, inProgressCount: 0, urgentCount: 0, overdueCount: 0 },
+            filters: { applied: { status: null, priority: null } },
+          } satisfies PendingReviewsResponse);
         }
 
         const { data: adviser } = await supabaseAdmin
@@ -81,10 +85,11 @@ export async function GET(req: NextRequest) {
           .eq('user_id', auth.userId)
           .maybeSingle();
         if (!adviser) {
-          return NextResponse.json(
-            { error: 'Adviser profile not found' },
-            { status: 404 }
-          );
+          return NextResponse.json({
+            reviews: [],
+            summary: { totalPending: 0, submittedCount: 0, inProgressCount: 0, urgentCount: 0, overdueCount: 0 },
+            filters: { applied: { status: null, priority: null } },
+          } satisfies PendingReviewsResponse);
         }
 
         const adviserId = adviser.id;
