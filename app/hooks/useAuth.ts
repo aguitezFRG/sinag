@@ -22,6 +22,25 @@ interface AuthState {
   error: string | null;
 }
 
+async function fetchUserData(): Promise<{ user: User | null; error: string | null }> {
+  try {
+    const res = await fetch('/api/auth/me', {
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        return { user: null, error: null };
+      }
+      throw new Error('Failed to fetch user');
+    }
+    const data = await res.json();
+    return { user: data.user as User | null, error: null };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { user: null, error: message };
+  }
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -29,28 +48,23 @@ export function useAuth() {
     error: null,
   });
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me', {
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          setState({ user: null, loading: false, error: null });
-          return;
-        }
-        throw new Error('Failed to fetch user');
+  useEffect(() => {
+    let cancelled = false;
+    fetchUserData().then((result) => {
+      if (!cancelled) {
+        setState({ ...result, loading: false });
       }
-      const data = await res.json();
-      setState({ user: data.user, loading: false, error: null });
-    } catch (err: any) {
-      setState({ user: null, loading: false, error: err.message });
-    }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+  const refresh = useCallback(async () => {
+    const result = await fetchUserData();
+    setState({ ...result, loading: false });
+    return result.user;
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setState((s) => ({ ...s, loading: true, error: null }));
@@ -73,12 +87,14 @@ export function useAuth() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
+        const message = typeof data.error === 'string' ? data.error : JSON.stringify(data.error ?? 'Login failed');
+        throw new Error(message);
       }
       setState({ user: data.user, loading: false, error: null });
       return data.user as User;
-    } catch (err: any) {
-      setState((s) => ({ ...s, loading: false, error: err.message }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
   }, []);
@@ -113,14 +129,20 @@ export function useAuth() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Registration failed');
+        const message = typeof data.error === 'string' ? data.error : JSON.stringify(data.error ?? 'Registration failed');
+        throw new Error(message);
       }
       setState({ user: data.user, loading: false, error: null });
       return data.user as User;
-    } catch (err: any) {
-      setState((s) => ({ ...s, loading: false, error: err.message }));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setState((s) => ({ ...s, loading: false, error: message }));
       throw err;
     }
+  }, []);
+
+  const clearError = useCallback(() => {
+    setState((s) => ({ ...s, error: null }));
   }, []);
 
   const logout = useCallback(async () => {
@@ -148,11 +170,13 @@ export function useAuth() {
         });
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.error || 'Failed to change password');
+          const message = typeof data.error === 'string' ? data.error : JSON.stringify(data.error ?? 'Failed to change password');
+          throw new Error(message);
         }
         setState((s) => ({ ...s, loading: false, error: null }));
-      } catch (err: any) {
-        setState((s) => ({ ...s, loading: false, error: err.message }));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setState((s) => ({ ...s, loading: false, error: message }));
         throw err;
       }
     },
@@ -168,6 +192,7 @@ export function useAuth() {
     register,
     logout,
     changePassword,
-    refresh: fetchUser,
+    clearError,
+    refresh,
   };
 }
