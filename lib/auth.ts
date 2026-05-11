@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'sinag-dev-secret-change-in-production'
@@ -11,6 +12,7 @@ export interface TokenPayload {
   userId: string;
   email: string;
   role: UserRole;
+  jti: string;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -21,7 +23,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function createToken(payload: TokenPayload): Promise<string> {
+export async function createToken(payload: Omit<TokenPayload, 'jti'>): Promise<string> {
   if (
     process.env.NODE_ENV === 'production' &&
     (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'sinag-dev-secret-change-in-production')
@@ -29,10 +31,13 @@ export async function createToken(payload: TokenPayload): Promise<string> {
     throw new Error('JWT_SECRET is not configured securely for production');
   }
 
-  return new SignJWT(payload as any)
+  const jti = randomUUID();
+
+  return new SignJWT({ ...payload, jti })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')
+    .setJti(jti)
     .sign(JWT_SECRET);
 }
 
