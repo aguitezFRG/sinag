@@ -90,26 +90,40 @@ export async function PATCH(req: NextRequest) {
   return withAuth(req, async (request, auth) => {
     void request;
     void auth;
-    const { userId, updates } = await req.json();
-    if (!isUuid(userId)) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Request body is required' }, { status: 400 });
+    }
+    const { userId, updates } = body as Record<string, unknown>;
+    if (typeof userId !== 'string' || !isUuid(userId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
     }
 
     const updatePayload: Record<string, unknown> = {};
-    if (typeof updates?.isActive === 'boolean') updatePayload.is_active = updates.isActive;
-    if (typeof updates?.role === 'string') updatePayload.role = updates.role as UserRole;
-    if (typeof updates?.firstName === 'string') updatePayload.first_name = updates.firstName;
-    if (typeof updates?.lastName === 'string') updatePayload.last_name = updates.lastName;
-    if (typeof updates?.avatar === 'string') updatePayload.avatar = updates.avatar;
+    const u = typeof updates === 'object' && updates !== null ? updates as Record<string, unknown> : {};
+    if (typeof u.isActive === 'boolean') updatePayload.is_active = u.isActive;
+    if (typeof u.role === 'string') updatePayload.role = u.role as UserRole;
+    if (typeof u.firstName === 'string') updatePayload.first_name = u.firstName;
+    if (typeof u.lastName === 'string') updatePayload.last_name = u.lastName;
+    if (typeof u.avatar === 'string') updatePayload.avatar = u.avatar;
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    }
 
     const { data, error } = await supabaseAdmin
       .from('users')
       .update(updatePayload)
       .eq('id', userId)
       .select('id, email, role, first_name, last_name, avatar, is_active, created_at, last_login_at')
-      .maybeSingle();
+      .single();
 
-    if (error || !data) {
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

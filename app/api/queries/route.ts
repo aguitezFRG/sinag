@@ -11,6 +11,15 @@ function isUuid(value: unknown): boolean {
   return typeof value === 'string' && UUID_RE.test(value);
 }
 
+function sanitizeInput(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 const querySchema = z.object({
   query: z.string().trim().min(1).max(MAX_QUERY_LENGTH),
   sessionId: z.string().optional(),
@@ -69,8 +78,8 @@ export async function POST(req: NextRequest) {
             .insert({
               user_id: auth.userId,
               session_id: meta.sessionId,
-              query: data.query,
-              response: accumulated,
+              query: sanitizeInput(data.query),
+              response: sanitizeInput(accumulated),
               intent: meta.intent,
               is_flagged: false,
             })
@@ -101,7 +110,7 @@ export async function POST(req: NextRequest) {
             resource: 'queries',
             resource_id: queryRow?.id ?? null,
             details: {
-              query: data.query,
+              query: sanitizeInput(data.query),
               intent: meta.intent,
               sessionId: meta.sessionId,
               sourceCount: meta.sources.length,

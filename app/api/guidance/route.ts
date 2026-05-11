@@ -31,8 +31,8 @@ function toLegacyResource(row: GuidanceRow) {
 }
 
 export async function GET(req: NextRequest) {
-  return withAuth(req, async (_req, _auth) => {
-    const { searchParams } = new URL(req.url);
+  return withAuth(req, async (request) => {
+    const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const tag = searchParams.get('tag');
     const q = searchParams.get('q');
@@ -66,18 +66,35 @@ export async function GET(req: NextRequest) {
   });
 }
 
+const VALID_GUIDANCE_CATEGORIES = ['template', 'checklist', 'guideline', 'policy'] as const;
+
 export async function POST(req: NextRequest) {
-  return withAuth(req, async (_req, _auth) => {
-    const body = await req.json();
+  return withAuth(req, async (request) => {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Request body is required' }, { status: 400 });
+    }
+
+    const rawCategory = (body as Record<string, unknown>)?.category;
+    const category = typeof rawCategory === 'string' ? rawCategory : 'guideline';
+    if (!VALID_GUIDANCE_CATEGORIES.includes(category as typeof VALID_GUIDANCE_CATEGORIES[number])) {
+      return NextResponse.json(
+        { error: `Invalid category. Must be one of: ${VALID_GUIDANCE_CATEGORIES.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     const { data, error } = await supabaseAdmin
       .from('guidance_resources')
       .insert({
-        title: body.title || 'Untitled',
-        category: body.category || 'guideline',
-        content: body.content || '',
-        file_url: body.fileUrl || null,
-        tags: Array.isArray(body.tags) ? body.tags : [],
-        program: body.program || null,
+        title: (body as Record<string, unknown>)?.title || 'Untitled',
+        category,
+        content: (body as Record<string, unknown>)?.content || '',
+        file_url: (body as Record<string, unknown>)?.fileUrl || null,
+        tags: Array.isArray((body as Record<string, unknown>)?.tags) ? (body as Record<string, unknown>)?.tags as string[] : [],
+        program: (body as Record<string, unknown>)?.program || null,
         is_active: true,
       })
       .select('id, title, category, content, file_url, tags, program, is_active, created_at, updated_at')
